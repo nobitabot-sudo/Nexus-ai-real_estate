@@ -1,73 +1,145 @@
-import * as React from "react"
-import { Link, useLocation } from "wouter"
-import { LayoutDashboard, Phone, Settings, LogOut, Building, UserCircle } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { ReactNode } from "react";
+import { Link, useLocation } from "wouter";
+import { useClerk, useUser } from "@clerk/react";
+import {
+  LayoutDashboard,
+  Phone,
+  Users,
+  LogOut,
+  Building2,
+  Menu,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
-export function Sidebar() {
-  const [location] = useLocation()
-  
-  const navItems = [
-    { name: "Dashboard", href: "/", icon: LayoutDashboard },
-    { name: "All Calls", href: "/calls", icon: Phone },
-  ]
-  
+export function AppLayout({
+  children,
+  role,
+}: {
+  children: ReactNode;
+  role: "admin" | "client";
+}) {
+  const [location] = useLocation();
+  const { signOut } = useClerk();
+  const { user } = useUser();
+
+  const adminNav = [
+    { name: "Clients", href: "/admin", icon: Users },
+  ];
+
+  const clientNav = [
+    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    { name: "Calls", href: "/calls", icon: Phone },
+  ];
+
+  const navItems = role === "admin" ? adminNav : clientNav;
+
+  const NavLinks = () => (
+    <>
+      {navItems.map((item) => {
+        const isActive = location === item.href || location.startsWith(item.href + "/");
+        return (
+          <Link
+            key={item.name}
+            href={item.href}
+            className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+              isActive
+                ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+            }`}
+          >
+            <item.icon className="h-5 w-5" />
+            {item.name}
+          </Link>
+        );
+      })}
+    </>
+  );
+
   return (
-    <div className="w-64 bg-sidebar text-sidebar-foreground border-r border-sidebar-border flex flex-col h-[100dvh] flex-shrink-0">
-      <div className="p-6 flex items-center gap-3">
-        <div className="w-8 h-8 rounded-md bg-sidebar-primary flex items-center justify-center text-sidebar-primary-foreground font-bold">
-          <Building size={18} />
+    <div className="flex min-h-[100dvh] w-full flex-col bg-background md:flex-row">
+      {/* Mobile Header */}
+      <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b bg-card px-4 md:hidden">
+        <div className="flex items-center gap-2 font-bold text-primary text-lg">
+          <Building2 className="h-5 w-5" />
+          <span>NexusAI</span>
         </div>
-        <span className="font-bold text-lg tracking-tight">Nexus RE</span>
-      </div>
-      
-      <div className="px-4 py-2 text-xs font-semibold text-sidebar-foreground/50 uppercase tracking-wider">
-        Menu
-      </div>
-      
-      <nav className="flex-1 px-3 py-2 space-y-1">
-        {navItems.map((item) => {
-          const isActive = location === item.href || (item.href !== "/" && location.startsWith(item.href))
-          return (
-            <Link key={item.href} href={item.href}>
-              <div
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2 rounded-md transition-colors cursor-pointer group",
-                  isActive 
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" 
-                    : "hover:bg-sidebar-accent/50 text-sidebar-foreground/80 hover:text-sidebar-foreground"
-                )}
-                data-testid={`nav-${item.name.toLowerCase().replace(' ', '-')}`}
-              >
-                <item.icon size={18} className={cn(
-                  isActive ? "text-sidebar-primary" : "text-sidebar-foreground/50 group-hover:text-sidebar-foreground/80"
-                )} />
-                {item.name}
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button variant="ghost" size="icon" className="md:hidden">
+              <Menu className="h-5 w-5" />
+              <span className="sr-only">Toggle menu</span>
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="w-64 bg-sidebar p-0 text-sidebar-foreground border-r-sidebar-border">
+            <div className="flex h-14 items-center gap-2 border-b border-sidebar-border px-6 font-bold text-sidebar-primary text-lg">
+              <Building2 className="h-6 w-6" />
+              <span>NexusAI</span>
+            </div>
+            <nav className="flex-1 space-y-1 p-4">
+              <NavLinks />
+            </nav>
+            <div className="border-t border-sidebar-border p-4">
+              <div className="mb-4 flex items-center gap-3 px-3">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-sidebar-accent text-sidebar-accent-foreground font-semibold">
+                  {user?.firstName?.[0] || user?.emailAddresses[0]?.emailAddress[0].toUpperCase()}
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium leading-none">{user?.fullName || "User"}</span>
+                  <span className="text-xs text-sidebar-foreground/70">{role === "admin" ? "Administrator" : "Client"}</span>
+                </div>
               </div>
-            </Link>
-          )
-        })}
-      </nav>
-      
-      <div className="p-4 border-t border-sidebar-border">
-        <div className="flex items-center gap-3 px-3 py-2">
-          <UserCircle size={32} className="text-sidebar-foreground/50" />
-          <div className="flex flex-col">
-            <span className="text-sm font-medium">Agent Jane</span>
-            <span className="text-xs text-sidebar-foreground/50">jane@nexusre.com</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
+              <Button
+                variant="ghost"
+                className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                onClick={() => signOut({ redirectUrl: "/" })}
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                Log out
+              </Button>
+            </div>
+          </SheetContent>
+        </Sheet>
+      </header>
 
-export function AppLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex h-[100dvh] w-full bg-background overflow-hidden">
-      <Sidebar />
-      <main className="flex-1 overflow-y-auto overflow-x-hidden relative flex flex-col">
+      {/* Desktop Sidebar */}
+      <aside className="hidden w-64 flex-col border-r border-sidebar-border bg-sidebar md:flex">
+        <div className="flex h-16 items-center gap-2 border-b border-sidebar-border px-6 font-bold text-sidebar-primary text-xl">
+          <Building2 className="h-6 w-6" />
+          <span>NexusAI</span>
+        </div>
+        
+        <nav className="flex-1 space-y-1 p-4">
+          <NavLinks />
+        </nav>
+        
+        <div className="border-t border-sidebar-border p-4">
+          <div className="mb-4 flex items-center gap-3 px-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-sidebar-accent text-sidebar-accent-foreground font-semibold">
+              {user?.firstName?.[0] || user?.emailAddresses[0]?.emailAddress[0].toUpperCase() || "U"}
+            </div>
+            <div className="flex flex-col truncate">
+              <span className="truncate text-sm font-medium text-sidebar-foreground leading-none mb-1">
+                {user?.fullName || user?.emailAddresses[0]?.emailAddress || "User"}
+              </span>
+              <span className="text-xs text-sidebar-foreground/70 capitalize">{role}</span>
+            </div>
+          </div>
+          <Button
+            variant="ghost"
+            className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+            onClick={() => signOut({ redirectUrl: "/" })}
+          >
+            <LogOut className="mr-2 h-4 w-4" />
+            Log out
+          </Button>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-1 overflow-auto">
         {children}
       </main>
     </div>
-  )
+  );
 }

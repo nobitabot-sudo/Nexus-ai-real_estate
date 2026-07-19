@@ -6,14 +6,20 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './authMeResponse';
 export * from './callDetail';
 export * from './callMessage';
 export * from './callStats';
 export * from './callSummary';
+export * from './clientInput';
+export * from './clientRecord';
+export * from './clientUpdate';
 export * from './dailyCallCount';
 export * from './errorResponse';
+export * from './getCallStatsParams';
 export * from './healthStatus';
 export * from './leadInfo';
 export * from './listCallsParams';
+export * from './onboardInput';
 export * from './sentimentBreakdown';
 export * from './sentimentInfo';

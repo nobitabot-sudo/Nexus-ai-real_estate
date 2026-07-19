@@ -6,16 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type ListCallsParams = {
-limit?: number;
-/**
- * @nullable
- */
-createdAtGt?: string | null;
-/**
- * @nullable
- */
-status?: string | null;
+export type GetCallStatsParams = {
 /**
  * @nullable
  */

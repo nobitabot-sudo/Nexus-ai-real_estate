@@ -129,6 +129,48 @@ export interface CallStats {
   callsLastWeek: number;
 }
 
+export interface ClientRecord {
+  id: number;
+  clientCode: string;
+  name: string;
+  assistantId: string;
+  /** @nullable */
+  niche?: string | null;
+  /** @nullable */
+  clerkUserId?: string | null;
+  isLinked: boolean;
+  createdAt: string;
+}
+
+export interface ClientInput {
+  clientCode: string;
+  name: string;
+  assistantId: string;
+  /** @nullable */
+  niche?: string | null;
+}
+
+export interface ClientUpdate {
+  /** @nullable */
+  name?: string | null;
+  /** @nullable */
+  assistantId?: string | null;
+  /** @nullable */
+  niche?: string | null;
+}
+
+export interface OnboardInput {
+  clientCode: string;
+}
+
+export interface AuthMeResponse {
+  role: string;
+  clerkUserId: string;
+  /** @nullable */
+  email?: string | null;
+  isFirstUser: boolean;
+}
+
 export type ListCallsParams = {
 limit?: number;
 /**
@@ -139,5 +181,16 @@ createdAtGt?: string | null;
  * @nullable
  */
 status?: string | null;
+/**
+ * @nullable
+ */
+assistantId?: string | null;
+};
+
+export type GetCallStatsParams = {
+/**
+ * @nullable
+ */
+assistantId?: string | null;
 };
 

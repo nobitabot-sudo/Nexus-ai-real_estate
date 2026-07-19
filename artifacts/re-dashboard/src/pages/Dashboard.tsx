@@ -1,226 +1,207 @@
-import * as React from "react"
-import { useGetCallStats } from "@workspace/api-client-react"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Skeleton } from "@/components/ui/skeleton"
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts"
-import { Phone, Clock, PhoneCall, TrendingUp, AlertCircle, ArrowUpRight, ArrowDownRight } from "lucide-react"
-import { formatSecondsToDuration } from "@/lib/formatters"
-import { Link } from "wouter"
-import { Button } from "@/components/ui/button"
-
-function StatCard({ 
-  title, 
-  value, 
-  icon: Icon, 
-  description, 
-  trend 
-}: { 
-  title: string, 
-  value: React.ReactNode, 
-  icon: any, 
-  description?: string,
-  trend?: number
-}) {
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-        <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
-        <Icon className="w-4 h-4 text-muted-foreground" />
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
-        {(description || trend !== undefined) && (
-          <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-            {trend !== undefined && (
-              <span className={trend >= 0 ? "text-green-600 flex items-center" : "text-red-600 flex items-center"}>
-                {trend >= 0 ? <ArrowUpRight className="w-3 h-3 mr-0.5" /> : <ArrowDownRight className="w-3 h-3 mr-0.5" />}
-                {Math.abs(trend)}%
-              </span>
-            )}
-            {description}
-          </p>
-        )}
-      </CardContent>
-    </Card>
-  )
-}
-
-const COLORS = {
-  positive: "hsl(142, 71%, 45%)",
-  neutral: "hsl(215, 16%, 47%)",
-  negative: "hsl(0, 84%, 60%)"
-}
+import { useGetCallStats } from "@workspace/api-client-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Phone, PhoneIncoming, Clock, TrendingUp, BrainCircuit } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
+import { PieChart, Pie, Cell } from "recharts";
 
 export default function Dashboard() {
-  const { data: stats, isLoading, isError } = useGetCallStats()
-  
-  if (isError) {
+  const { data: stats, isLoading } = useGetCallStats();
+
+  if (isLoading || !stats) {
     return (
-      <div className="p-8 w-full flex flex-col items-center justify-center min-h-[400px]">
-        <AlertCircle className="w-12 h-12 text-destructive mb-4" />
-        <h2 className="text-xl font-semibold mb-2">Failed to load statistics</h2>
-        <p className="text-muted-foreground">Please try refreshing the page.</p>
+      <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-6">
+        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Card key={i}><CardContent className="p-6"><Skeleton className="h-20 w-full" /></CardContent></Card>
+          ))}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <Card className="col-span-2"><CardContent className="p-6 h-[400px]"><Skeleton className="h-full w-full" /></CardContent></Card>
+          <Card><CardContent className="p-6 h-[400px]"><Skeleton className="h-full w-full" /></CardContent></Card>
+        </div>
       </div>
-    )
+    );
   }
 
-  const sentimentData = stats ? [
-    { name: 'Positive', value: stats.sentimentBreakdown.positive, color: COLORS.positive },
-    { name: 'Neutral', value: stats.sentimentBreakdown.neutral, color: COLORS.neutral },
-    { name: 'Negative', value: stats.sentimentBreakdown.negative, color: COLORS.negative },
-  ].filter(d => d.value > 0) : []
+  const volumeChange = stats.callsLastWeek > 0 
+    ? Math.round(((stats.callsThisWeek - stats.callsLastWeek) / stats.callsLastWeek) * 100) 
+    : 0;
 
-  // Calculate week-over-week trend
-  let totalCallsTrend = 0
-  if (stats && stats.callsLastWeek > 0) {
-    totalCallsTrend = Math.round(((stats.callsThisWeek - stats.callsLastWeek) / stats.callsLastWeek) * 100)
-  } else if (stats && stats.callsThisWeek > 0 && stats.callsLastWeek === 0) {
-    totalCallsTrend = 100
-  }
+  const sentimentData = [
+    { name: "Positive", value: stats.sentimentBreakdown.positive, color: "hsl(173 58% 39%)" },
+    { name: "Neutral", value: stats.sentimentBreakdown.neutral, color: "hsl(215 16% 47%)" },
+    { name: "Negative", value: stats.sentimentBreakdown.negative, color: "hsl(0 84% 60%)" },
+  ].filter(d => d.value > 0);
+
+  const formatDuration = (secs: number) => {
+    if (!secs) return "0s";
+    const m = Math.floor(secs / 60);
+    const s = Math.round(secs % 60);
+    return `${m}m ${s}s`;
+  };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto w-full space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Overview</h1>
-          <p className="text-muted-foreground mt-1">Review your AI agent's performance and call metrics.</p>
-        </div>
-        <Link href="/calls">
-          <Button>View All Calls</Button>
-        </Link>
-      </div>
-      
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {isLoading ? (
-          <>
-            <Skeleton className="h-[120px] rounded-xl" />
-            <Skeleton className="h-[120px] rounded-xl" />
-            <Skeleton className="h-[120px] rounded-xl" />
-            <Skeleton className="h-[120px] rounded-xl" />
-          </>
-        ) : stats ? (
-          <>
-            <StatCard 
-              title="Total Calls" 
-              value={stats.totalCalls} 
-              icon={Phone} 
-              description="vs last week"
-              trend={totalCallsTrend}
-            />
-            <StatCard 
-              title="Answered Rate" 
-              value={stats.totalCalls > 0 ? `${Math.round((stats.answeredCalls / stats.totalCalls) * 100)}%` : "0%"} 
-              icon={PhoneCall} 
-              description={`${stats.answeredCalls} calls answered`}
-            />
-            <StatCard 
-              title="Avg. Duration" 
-              value={formatSecondsToDuration(stats.avgDurationSeconds)} 
-              icon={Clock} 
-              description="across all answered calls"
-            />
-            <StatCard 
-              title="Top Intent" 
-              value={stats.topIntents.length > 0 ? stats.topIntents[0] : "None"} 
-              icon={TrendingUp} 
-              description={stats.topIntents.length > 1 ? `followed by ${stats.topIntents[1]}` : undefined}
-            />
-          </>
-        ) : null}
+    <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-8">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+        <p className="text-muted-foreground mt-1">Overview of your AI agent's performance.</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Call Volume</CardTitle>
-            <CardDescription>Daily call counts over the last period</CardDescription>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Card className="shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Calls</CardTitle>
+            <Phone className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="h-[300px] w-full">
-              {isLoading ? (
-                <Skeleton className="w-full h-full" />
-              ) : stats && stats.callsByDay.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={stats.callsByDay} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
-                    <XAxis 
-                      dataKey="date" 
-                      axisLine={false} 
-                      tickLine={false} 
-                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} 
-                      dy={10}
-                    />
-                    <YAxis 
-                      axisLine={false} 
-                      tickLine={false} 
-                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} 
-                    />
-                    <Tooltip 
-                      cursor={{ fill: 'hsl(var(--muted)/0.5)' }}
-                      contentStyle={{ borderRadius: '8px', border: '1px solid hsl(var(--border))', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                    />
-                    <Bar 
-                      dataKey="count" 
-                      fill="hsl(var(--primary))" 
-                      radius={[4, 4, 0, 0]} 
-                      barSize={40}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-muted-foreground border border-dashed rounded-lg">
-                  No call data available
-                </div>
-              )}
+            <div className="text-2xl font-bold">{stats.totalCalls}</div>
+            <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+              <TrendingUp className={`h-3 w-3 ${volumeChange >= 0 ? 'text-emerald-500' : 'text-red-500'}`} />
+              <span className={volumeChange >= 0 ? 'text-emerald-500' : 'text-red-500'}>
+                {volumeChange >= 0 ? '+' : ''}{volumeChange}%
+              </span> from last week
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card className="shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Answer Rate</CardTitle>
+            <PhoneIncoming className="h-4 w-4 text-primary" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {stats.totalCalls > 0 ? Math.round((stats.answeredCalls / stats.totalCalls) * 100) : 0}%
             </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {stats.answeredCalls} out of {stats.totalCalls} answered
+            </p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Sentiment</CardTitle>
-            <CardDescription>Breakdown of AI assessed caller sentiment</CardDescription>
+        <Card className="shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Avg Duration</CardTitle>
+            <Clock className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="h-[300px] w-full flex flex-col items-center justify-center">
-              {isLoading ? (
-                <Skeleton className="w-[200px] h-[200px] rounded-full" />
-              ) : sentimentData.length > 0 ? (
+            <div className="text-2xl font-bold">{formatDuration(stats.avgDurationSeconds || 0)}</div>
+            <p className="text-xs text-muted-foreground mt-1">Across all answered calls</p>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-sm border-primary/20 bg-primary/5">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-primary">Top Intent</CardTitle>
+            <BrainCircuit className="h-4 w-4 text-primary" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-lg font-bold text-foreground leading-tight truncate">
+              {stats.topIntents.length > 0 ? stats.topIntents[0] : "None detected"}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Most common caller goal</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <Card className="col-span-1 lg:col-span-2 shadow-sm">
+          <CardHeader>
+            <CardTitle>Call Volume</CardTitle>
+            <CardDescription>Daily call activity over the last 30 days</CardDescription>
+          </CardHeader>
+          <CardContent className="h-[350px]">
+            {stats.callsByDay.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={stats.callsByDay} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                  <XAxis 
+                    dataKey="date" 
+                    tickFormatter={(val) => {
+                      const d = new Date(val);
+                      return `${d.getMonth()+1}/${d.getDate()}`;
+                    }}
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
+                    dy={10}
+                  />
+                  <YAxis 
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
+                    allowDecimals={false}
+                  />
+                  <Tooltip 
+                    cursor={{ fill: 'hsl(var(--muted))' }}
+                    contentStyle={{ backgroundColor: 'hsl(var(--card))', borderRadius: '8px', border: '1px solid hsl(var(--border))' }}
+                    labelFormatter={(val) => new Date(val).toLocaleDateString()}
+                  />
+                  <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center text-muted-foreground">
+                No call data available
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-sm">
+          <CardHeader>
+            <CardTitle>Sentiment Breakdown</CardTitle>
+            <CardDescription>Overall tone of AI conversations</CardDescription>
+          </CardHeader>
+          <CardContent className="h-[350px] flex flex-col items-center justify-center relative">
+            {sentimentData.length > 0 ? (
+              <>
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
                       data={sentimentData}
                       cx="50%"
-                      cy="45%"
-                      innerRadius={60}
-                      outerRadius={90}
-                      paddingAngle={2}
+                      cy="50%"
+                      innerRadius={80}
+                      outerRadius={110}
+                      paddingAngle={5}
                       dataKey="value"
+                      stroke="none"
                     >
                       {sentimentData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} stroke="transparent" />
+                        <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
                     <Tooltip 
-                      contentStyle={{ borderRadius: '8px', border: '1px solid hsl(var(--border))', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                    />
-                    <Legend 
-                      verticalAlign="bottom" 
-                      height={36} 
-                      iconType="circle"
-                      formatter={(value, entry: any) => <span style={{ color: 'hsl(var(--foreground))' }}>{value}</span>}
+                      formatter={(value: number) => [`${value} calls`, '']}
+                      contentStyle={{ backgroundColor: 'hsl(var(--card))', borderRadius: '8px', border: '1px solid hsl(var(--border))' }}
                     />
                   </PieChart>
                 </ResponsiveContainer>
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-muted-foreground border border-dashed rounded-lg">
-                  No sentiment data
+                <div className="absolute inset-0 flex items-center justify-center flex-col pointer-events-none pb-4">
+                  <span className="text-3xl font-bold">{stats.answeredCalls}</span>
+                  <span className="text-xs text-muted-foreground">Total Answered</span>
                 </div>
-              )}
-            </div>
+                
+                <div className="w-full flex justify-center gap-4 mt-4">
+                  {sentimentData.map((s) => (
+                    <div key={s.name} className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: s.color }} />
+                      <span className="text-sm font-medium">{s.name}</span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="h-full flex items-center justify-center text-muted-foreground">
+                No sentiment data available
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
     </div>
-  )
+  );
 }

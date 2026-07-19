@@ -1,6 +1,5 @@
 /**
  * VAPI API client
- * Fetches call data from the VAPI platform and maps it to our API shapes.
  */
 
 const VAPI_BASE = "https://api.vapi.ai";
@@ -33,8 +32,6 @@ async function vapiGet<T>(path: string, params?: Record<string, string | number 
   return res.json() as Promise<T>;
 }
 
-// ---- Raw VAPI types ----
-
 interface VapiCustomer {
   name?: string;
   number?: string;
@@ -53,7 +50,6 @@ interface VapiMessage {
   time?: number;
   endTime?: number;
   duration?: number;
-  secondsFromStart?: number;
 }
 
 interface VapiCall {
@@ -63,7 +59,6 @@ interface VapiCall {
   startedAt?: string;
   endedAt?: string;
   endedReason?: string;
-  type?: string;
   assistantId?: string;
   customer?: VapiCustomer;
   transcript?: string;
@@ -72,16 +67,11 @@ interface VapiCall {
   analysis?: VapiAnalysis;
   messages?: VapiMessage[];
   cost?: number;
-  costBreakdown?: Record<string, unknown>;
 }
-
-// ---- Mapping helpers ----
 
 function calcDuration(call: VapiCall): number | null {
   if (call.startedAt && call.endedAt) {
-    const start = new Date(call.startedAt).getTime();
-    const end = new Date(call.endedAt).getTime();
-    return Math.round((end - start) / 1000);
+    return Math.round((new Date(call.endedAt).getTime() - new Date(call.startedAt).getTime()) / 1000);
   }
   return null;
 }
@@ -101,27 +91,23 @@ function extractLeadInfo(call: VapiCall) {
 
 function extractSentiment(call: VapiCall) {
   const evaluation = call.analysis?.successEvaluation;
-  // successEvaluation can be numeric string like "0.8" or label like "positive"
   const score = evaluation ? parseFloat(evaluation) : null;
-  const numericScore = !isNaN(score ?? NaN) ? score : null;
+  const numericScore = score !== null && !isNaN(score) ? score : null;
 
   let label: string | null = null;
   let intent: string | null = null;
 
-  // Derive label from score or summary keywords
   if (numericScore !== null) {
     if (numericScore >= 0.7) label = "positive";
     else if (numericScore >= 0.4) label = "neutral";
     else label = "negative";
   } else if (evaluation) {
-    // text-based evaluation
     const ev = evaluation.toLowerCase();
     if (ev.includes("success") || ev.includes("positive") || ev.includes("interested")) label = "positive";
     else if (ev.includes("fail") || ev.includes("negative") || ev.includes("not interested")) label = "negative";
     else label = "neutral";
   }
 
-  // Try to extract intent from summary
   const summary = (call.analysis?.summary ?? "").toLowerCase();
   if (summary.includes("buy") || summary.includes("purchas")) intent = "buyer";
   else if (summary.includes("rent") || summary.includes("lease")) intent = "renter";
@@ -139,18 +125,10 @@ function extractFollowUpActions(call: VapiCall): string[] {
   const summary = call.analysis?.summary ?? "";
   const actions2: string[] = [];
   const lc = summary.toLowerCase();
-  if (lc.includes("schedule") || lc.includes("appointment") || lc.includes("meeting")) {
-    actions2.push("Schedule a property viewing");
-  }
-  if (lc.includes("send") && (lc.includes("listing") || lc.includes("brochure") || lc.includes("detail"))) {
-    actions2.push("Send property listings");
-  }
-  if (lc.includes("callback") || lc.includes("call back") || lc.includes("follow up") || lc.includes("follow-up")) {
-    actions2.push("Schedule a follow-up call");
-  }
-  if (lc.includes("pre-approv") || lc.includes("preapprov") || lc.includes("mortgage")) {
-    actions2.push("Assist with mortgage pre-approval");
-  }
+  if (lc.includes("schedule") || lc.includes("appointment") || lc.includes("meeting")) actions2.push("Schedule a property viewing");
+  if (lc.includes("send") && (lc.includes("listing") || lc.includes("brochure") || lc.includes("detail"))) actions2.push("Send property listings");
+  if (lc.includes("callback") || lc.includes("call back") || lc.includes("follow up") || lc.includes("follow-up")) actions2.push("Schedule a follow-up call");
+  if (lc.includes("pre-approv") || lc.includes("preapprov") || lc.includes("mortgage")) actions2.push("Assist with mortgage pre-approval");
   return actions2;
 }
 
@@ -169,6 +147,7 @@ function mapToCallSummary(call: VapiCall) {
     sentiment: extractSentiment(call),
     lead: extractLeadInfo(call),
     hasRecording: !!(call.recordingUrl || call.stereoRecordingUrl),
+    assistantId: call.assistantId ?? null,
   };
 }
 
@@ -187,17 +166,20 @@ function mapToCallDetail(call: VapiCall) {
       duration: m.duration ?? null,
     })),
     cost: call.cost ?? null,
-    hasRecording: !!(call.recordingUrl || call.stereoRecordingUrl),
   };
 }
 
-// ---- Public API ----
-
-export async function listVapiCalls(opts: { limit?: number; createdAtGt?: string; status?: string }) {
+export async function listVapiCalls(opts: {
+  limit?: number;
+  createdAtGt?: string;
+  status?: string;
+  assistantId?: string;
+}) {
   const calls = await vapiGet<VapiCall[]>("/call", {
     limit: opts.limit ?? 50,
     createdAtGt: opts.createdAtGt,
     status: opts.status,
+    assistantId: opts.assistantId,
   });
   return calls.map(mapToCallSummary);
 }
@@ -207,21 +189,20 @@ export async function getVapiCall(id: string) {
   return mapToCallDetail(call);
 }
 
-export async function getVapiCallStats() {
-  // Fetch enough calls to compute meaningful stats
-  const calls = await vapiGet<VapiCall[]>("/call", { limit: 500 });
+export async function getVapiCallStats(assistantId?: string) {
+  const calls = await vapiGet<VapiCall[]>("/call", {
+    limit: 500,
+    assistantId,
+  });
 
   const total = calls.length;
   const answered = calls.filter((c) => c.status === "ended" || c.startedAt).length;
 
-  const durations = calls
-    .map(calcDuration)
-    .filter((d): d is number => d !== null);
+  const durations = calls.map(calcDuration).filter((d): d is number => d !== null);
   const avgDuration = durations.length > 0
     ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length)
     : null;
 
-  // Sentiment breakdown
   let positive = 0, neutral = 0, negative = 0;
   const intentCounts: Record<string, number> = {};
   for (const call of calls) {
@@ -232,7 +213,6 @@ export async function getVapiCallStats() {
     if (s.intent) intentCounts[s.intent] = (intentCounts[s.intent] ?? 0) + 1;
   }
 
-  // Calls by day (last 14 days)
   const dayMap: Record<string, number> = {};
   const now = Date.now();
   for (let i = 13; i >= 0; i--) {
@@ -245,7 +225,6 @@ export async function getVapiCallStats() {
   }
   const callsByDay = Object.entries(dayMap).map(([date, count]) => ({ date, count }));
 
-  // This week vs last week
   const weekAgo = now - 7 * 86400000;
   const twoWeeksAgo = now - 14 * 86400000;
   const thisWeek = calls.filter((c) => new Date(c.createdAt).getTime() >= weekAgo).length;
@@ -254,10 +233,7 @@ export async function getVapiCallStats() {
     return t >= twoWeeksAgo && t < weekAgo;
   }).length;
 
-  const topIntents = Object.entries(intentCounts)
-    .sort(([, a], [, b]) => b - a)
-    .slice(0, 5)
-    .map(([intent]) => intent);
+  const topIntents = Object.entries(intentCounts).sort(([, a], [, b]) => b - a).slice(0, 5).map(([intent]) => intent);
 
   return {
     totalCalls: total,

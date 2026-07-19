@@ -1,133 +1,170 @@
-import * as React from "react"
-import { useListCalls } from "@workspace/api-client-react"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Input } from "@/components/ui/input"
-import { Card } from "@/components/ui/card"
-import { Skeleton } from "@/components/ui/skeleton"
-import { StatusBadge } from "@/components/calls/StatusBadge"
-import { SentimentBadge } from "@/components/calls/SentimentBadge"
-import { formatSecondsToDuration } from "@/lib/formatters"
-import { format } from "date-fns"
-import { Search, PhoneOff, ChevronRight } from "lucide-react"
-import { useLocation } from "wouter"
+import { useState } from "react";
+import { Link } from "wouter";
+import { useListCalls } from "@workspace/api-client-react";
+import { formatDuration, formatDate } from "@/lib/format";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
+import { 
+  Search, 
+  Phone, 
+  PhoneOff, 
+  PhoneMissed,
+  ChevronRight,
+  Filter,
+  PlayCircle
+} from "lucide-react";
 
 export default function Calls() {
-  const [, setLocation] = useLocation()
-  const [searchTerm, setSearchTerm] = React.useState("")
-  const { data: calls, isLoading } = useListCalls()
+  const [searchTerm, setSearchTerm] = useState("");
+  const { data: calls, isLoading } = useListCalls();
 
-  const filteredCalls = React.useMemo(() => {
-    if (!calls) return []
-    if (!searchTerm) return calls
-    const lower = searchTerm.toLowerCase()
-    return calls.filter(c => 
-      c.customerName?.toLowerCase().includes(lower) || 
-      c.customerPhone?.toLowerCase().includes(lower) ||
-      c.summary?.toLowerCase().includes(lower) ||
-      c.sentiment?.intent?.toLowerCase().includes(lower)
-    )
-  }, [calls, searchTerm])
+  const filteredCalls = calls?.filter(call => {
+    if (!searchTerm) return true;
+    const term = searchTerm.toLowerCase();
+    return (
+      (call.customerName?.toLowerCase() || "").includes(term) ||
+      (call.customerPhone?.toLowerCase() || "").includes(term) ||
+      (call.lead?.propertyType?.toLowerCase() || "").includes(term) ||
+      (call.sentiment?.intent?.toLowerCase() || "").includes(term)
+    );
+  }) || [];
+
+  const getStatusIcon = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'ended': return <PhoneOff className="h-4 w-4 text-emerald-500" />;
+      case 'in-progress': return <Phone className="h-4 w-4 text-blue-500 animate-pulse" />;
+      case 'failed': return <PhoneMissed className="h-4 w-4 text-red-500" />;
+      default: return <Phone className="h-4 w-4 text-muted-foreground" />;
+    }
+  };
+
+  const getSentimentBadge = (sentiment?: { label?: string | null }) => {
+    if (!sentiment?.label) return null;
+    const s = sentiment.label.toLowerCase();
+    if (s === 'positive') return <Badge variant="success" className="capitalize">{s}</Badge>;
+    if (s === 'negative') return <Badge variant="destructive" className="capitalize">{s}</Badge>;
+    return <Badge variant="secondary" className="capitalize">{s}</Badge>;
+  };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto w-full space-y-6 animate-in fade-in duration-500">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">All Calls</h1>
-          <p className="text-muted-foreground mt-1">Review, search, and analyze all agent conversations.</p>
+          <h1 className="text-3xl font-bold tracking-tight">Call Log</h1>
+          <p className="text-muted-foreground mt-1">Review AI agent conversations and lead data.</p>
         </div>
       </div>
 
-      <Card className="overflow-hidden">
-        <div className="p-4 border-b border-border bg-muted/20">
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input 
-              placeholder="Search by name, phone, intent..." 
-              className="pl-9 bg-background"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input 
+            placeholder="Search by name, phone, intent..." 
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-9"
+          />
         </div>
-        
-        {isLoading ? (
-          <div className="p-4 space-y-4">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="flex gap-4">
-                <Skeleton className="h-12 w-full" />
-              </div>
-            ))}
-          </div>
-        ) : filteredCalls.length === 0 ? (
-          <div className="p-12 flex flex-col items-center justify-center text-center">
-            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
-              <PhoneOff className="h-8 w-8 text-muted-foreground" />
-            </div>
-            <h3 className="text-lg font-medium text-foreground">No calls found</h3>
-            <p className="text-muted-foreground max-w-sm mt-1">
-              {searchTerm ? "We couldn't find any calls matching your search." : "Your AI agent hasn't made any calls yet."}
-            </p>
-          </div>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-muted/30 hover:bg-muted/30">
-                <TableHead>Lead Info</TableHead>
-                <TableHead>Date & Time</TableHead>
-                <TableHead>Duration</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Sentiment</TableHead>
-                <TableHead className="w-[300px]">Summary / Intent</TableHead>
-                <TableHead className="w-[50px]"></TableHead>
+        <Button variant="outline" size="icon">
+          <Filter className="h-4 w-4" />
+        </Button>
+      </div>
+
+      <div className="rounded-md border bg-card shadow-sm">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[50px]"></TableHead>
+              <TableHead>Contact</TableHead>
+              <TableHead>Date & Time</TableHead>
+              <TableHead>Duration</TableHead>
+              <TableHead>Intent</TableHead>
+              <TableHead>Sentiment</TableHead>
+              <TableHead className="w-[100px]"></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              Array.from({ length: 8 }).map((_, i) => (
+                <TableRow key={i}>
+                  <TableCell><Skeleton className="h-6 w-6 rounded-full" /></TableCell>
+                  <TableCell>
+                    <Skeleton className="h-5 w-32 mb-1" />
+                    <Skeleton className="h-4 w-24" />
+                  </TableCell>
+                  <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                  <TableCell><Skeleton className="h-5 w-16" /></TableCell>
+                  <TableCell><Skeleton className="h-5 w-28" /></TableCell>
+                  <TableCell><Skeleton className="h-6 w-20 rounded-full" /></TableCell>
+                  <TableCell><Skeleton className="h-8 w-8 rounded-md" /></TableCell>
+                </TableRow>
+              ))
+            ) : filteredCalls.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={7} className="h-48 text-center text-muted-foreground">
+                  {searchTerm ? "No calls match your search." : "No calls recorded yet."}
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredCalls.map((call) => (
-                <TableRow 
-                  key={call.id} 
-                  className="cursor-pointer group"
-                  onClick={() => setLocation(`/calls/${call.id}`)}
-                >
+            ) : (
+              filteredCalls.map((call) => (
+                <TableRow key={call.id} className="group cursor-pointer hover:bg-muted/50 transition-colors">
                   <TableCell>
-                    <div className="font-medium">{call.customerName || call.lead?.name || "Unknown Lead"}</div>
-                    <div className="text-xs text-muted-foreground font-mono mt-0.5">
-                      {call.customerPhone || call.lead?.phone || "--"}
+                    <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
+                      {getStatusIcon(call.status)}
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="text-sm">
-                      {format(new Date(call.createdAt), "MMM d, yyyy")}
+                    <div className="font-medium text-foreground">
+                      {call.customerName || "Unknown Caller"}
                     </div>
-                    <div className="text-xs text-muted-foreground mt-0.5">
-                      {format(new Date(call.createdAt), "h:mm a")}
+                    <div className="text-sm text-muted-foreground font-mono mt-0.5">
+                      {call.customerPhone || "No caller ID"}
                     </div>
                   </TableCell>
-                  <TableCell className="font-mono text-sm text-muted-foreground">
-                    {formatSecondsToDuration(call.durationSeconds)}
+                  <TableCell className="text-sm text-muted-foreground">
+                    {formatDate(call.createdAt)}
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    {formatDuration(call.durationSeconds || 0)}
                   </TableCell>
                   <TableCell>
-                    <StatusBadge status={call.status} />
+                    {call.sentiment?.intent ? (
+                      <span className="text-sm font-medium">{call.sentiment.intent}</span>
+                    ) : (
+                      <span className="text-sm text-muted-foreground">-</span>
+                    )}
                   </TableCell>
                   <TableCell>
-                    <SentimentBadge label={call.sentiment?.label} score={call.sentiment?.score} />
+                    {getSentimentBadge(call.sentiment)}
                   </TableCell>
-                  <TableCell className="max-w-[300px]">
-                    <div className="text-sm font-medium mb-1 truncate">
-                      {call.sentiment?.intent || "General Inquiry"}
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      {call.hasRecording && (
+                        <PlayCircle className="h-4 w-4 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
+                      )}
+                      <Link href={`/calls/${call.id}`}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <ChevronRight className="h-4 w-4" />
+                        </Button>
+                      </Link>
                     </div>
-                    <div className="text-xs text-muted-foreground truncate">
-                      {call.summary || "No summary available."}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <ChevronRight className="w-5 h-5 text-muted-foreground/50 group-hover:text-foreground transition-colors" />
                   </TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
-      </Card>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
-  )
+  );
 }

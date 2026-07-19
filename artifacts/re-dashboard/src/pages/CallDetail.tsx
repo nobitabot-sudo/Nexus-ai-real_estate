@@ -1,256 +1,259 @@
-import * as React from "react"
-import { useGetCall, getGetCallQueryKey } from "@workspace/api-client-react"
-import { useParams, Link } from "wouter"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Skeleton } from "@/components/ui/skeleton"
-import { StatusBadge } from "@/components/calls/StatusBadge"
-import { SentimentBadge } from "@/components/calls/SentimentBadge"
-import { formatSecondsToDuration } from "@/lib/formatters"
-import { format } from "date-fns"
+import { useParams, Link } from "wouter";
+import { useGetCall, getGetCallQueryKey } from "@workspace/api-client-react";
+import { formatDuration, formatDate } from "@/lib/format";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 import { 
-  ArrowLeft, User, Phone, Mail, Home, DollarSign, 
-  MapPin, BedDouble, PlayCircle, CheckSquare, MessageSquare, AlertCircle
-} from "lucide-react"
-import { cn } from "@/lib/utils"
-
-function InfoRow({ icon: Icon, label, value }: { icon: any, label: string, value?: string | null }) {
-  if (!value) return null
-  return (
-    <div className="flex items-start gap-3 py-2 border-b border-border/50 last:border-0">
-      <Icon className="w-4 h-4 text-muted-foreground mt-0.5" />
-      <div>
-        <div className="text-xs text-muted-foreground">{label}</div>
-        <div className="text-sm font-medium">{value}</div>
-      </div>
-    </div>
-  )
-}
+  ArrowLeft, 
+  Phone, 
+  Calendar, 
+  Clock, 
+  User, 
+  MapPin, 
+  Home, 
+  DollarSign, 
+  CheckCircle2,
+  AlertCircle
+} from "lucide-react";
 
 export default function CallDetail() {
-  const { id } = useParams()
-  
-  const { data: call, isLoading, isError } = useGetCall(id || "", {
-    query: {
-      enabled: !!id,
-      queryKey: getGetCallQueryKey(id || "")
-    }
-  })
+  const { id } = useParams();
+  const { data: call, isLoading } = useGetCall(id as string, {
+    query: { enabled: !!id, queryKey: getGetCallQueryKey(id as string) }
+  });
 
   if (isLoading) {
     return (
-      <div className="p-8 max-w-7xl mx-auto w-full space-y-6">
-        <Skeleton className="h-10 w-48 mb-8" />
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="space-y-6 lg:col-span-1">
-            <Skeleton className="h-[400px] w-full rounded-xl" />
-            <Skeleton className="h-[200px] w-full rounded-xl" />
+      <div className="p-6 md:p-10 max-w-5xl mx-auto space-y-6">
+        <Skeleton className="h-8 w-32 mb-8" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="col-span-2 space-y-6">
+            <Card><CardContent className="p-6"><Skeleton className="h-32 w-full" /></CardContent></Card>
+            <Card><CardContent className="p-6"><Skeleton className="h-96 w-full" /></CardContent></Card>
           </div>
-          <div className="space-y-6 lg:col-span-2">
-            <Skeleton className="h-[150px] w-full rounded-xl" />
-            <Skeleton className="h-[500px] w-full rounded-xl" />
+          <div className="space-y-6">
+            <Card><CardContent className="p-6"><Skeleton className="h-64 w-full" /></CardContent></Card>
           </div>
         </div>
       </div>
-    )
+    );
   }
 
-  if (isError || !call) {
+  if (!call) {
     return (
-      <div className="p-8 w-full flex flex-col items-center justify-center min-h-[400px]">
-        <AlertCircle className="w-12 h-12 text-destructive mb-4" />
-        <h2 className="text-xl font-semibold mb-2">Call not found</h2>
-        <p className="text-muted-foreground mb-6">This call record doesn't exist or you don't have access.</p>
-        <Link href="/calls">
-          <Button variant="outline"><ArrowLeft className="w-4 h-4 mr-2" /> Back to Calls</Button>
-        </Link>
+      <div className="p-10 text-center text-muted-foreground">
+        Call not found.
       </div>
-    )
+    );
   }
 
-  const name = call.customerName || call.lead?.name || "Unknown Lead"
-  const phone = call.customerPhone || call.lead?.phone
+  const getSentimentColor = (label?: string | null) => {
+    switch(label?.toLowerCase()) {
+      case 'positive': return 'text-emerald-600 bg-emerald-500/10 border-emerald-200 dark:border-emerald-900';
+      case 'negative': return 'text-red-600 bg-red-500/10 border-red-200 dark:border-red-900';
+      default: return 'text-muted-foreground bg-muted border-border';
+    }
+  };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="mb-6">
+    <div className="p-6 md:p-10 max-w-6xl mx-auto space-y-6">
+      <div className="flex items-center gap-4">
         <Link href="/calls">
-          <Button variant="ghost" size="sm" className="pl-0 text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="w-4 h-4 mr-2" /> Back to Calls
+          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
+            <ArrowLeft className="h-4 w-4" />
           </Button>
         </Link>
-      </div>
-
-      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-3">
-            Call with {name}
+          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-3">
+            {call.customerName || "Unknown Caller"}
+            {call.status === "ended" && <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-transparent">Completed</Badge>}
           </h1>
-          <div className="flex items-center gap-3 mt-3 text-sm text-muted-foreground flex-wrap">
-            <StatusBadge status={call.status} />
-            <span>•</span>
-            <span className="flex items-center">
-              <Phone className="w-3 h-3 mr-1.5" />
-              {format(new Date(call.createdAt), "MMMM d, yyyy 'at' h:mm a")}
-            </span>
-            <span>•</span>
-            <span className="font-mono">{formatSecondsToDuration(call.durationSeconds)}</span>
-          </div>
+          <p className="text-muted-foreground text-sm flex items-center gap-4 mt-1 font-mono">
+            <span className="flex items-center gap-1.5"><Phone className="h-3 w-3" /> {call.customerPhone || "No ID"}</span>
+            <span className="flex items-center gap-1.5"><Calendar className="h-3 w-3" /> {formatDate(call.createdAt)}</span>
+            <span className="flex items-center gap-1.5"><Clock className="h-3 w-3" /> {formatDuration(call.durationSeconds || 0)}</span>
+          </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column: Lead Info & Audio */}
-        <div className="lg:col-span-4 space-y-6">
-          <Card>
-            <CardHeader className="pb-3 border-b border-border/50 bg-muted/20">
-              <CardTitle className="text-base flex items-center">
-                <User className="w-4 h-4 mr-2 text-primary" /> Lead Details
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-4">
-              <div className="space-y-1">
-                <InfoRow icon={User} label="Name" value={name} />
-                <InfoRow icon={Phone} label="Phone" value={phone} />
-                <InfoRow icon={Mail} label="Email" value={call.lead?.email} />
-                <InfoRow icon={Home} label="Property Type" value={call.lead?.propertyType} />
-                <InfoRow icon={MapPin} label="Location Interest" value={call.lead?.location} />
-                <InfoRow icon={DollarSign} label="Budget" value={call.lead?.budget} />
-                <InfoRow icon={BedDouble} label="Bedrooms" value={call.lead?.bedrooms} />
-              </div>
-            </CardContent>
-          </Card>
-
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Main Content: Summary, Recording, Transcript */}
+        <div className="col-span-1 lg:col-span-2 space-y-6">
+          
           {call.recordingUrl && (
-            <Card>
-              <CardHeader className="pb-3 border-b border-border/50 bg-muted/20">
-                <CardTitle className="text-base flex items-center">
-                  <PlayCircle className="w-4 h-4 mr-2 text-primary" /> Recording
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-4">
-                <audio 
-                  controls 
-                  className="w-full h-12 rounded outline-none" 
-                  src={call.recordingUrl}
-                />
+            <Card className="overflow-hidden border-primary/20 shadow-md">
+              <div className="bg-primary/5 px-6 py-3 border-b border-primary/10 flex items-center justify-between">
+                <span className="text-sm font-semibold text-primary">Call Recording</span>
+              </div>
+              <CardContent className="p-6 bg-card">
+                <audio controls className="w-full h-12" src={call.recordingUrl}>
+                  Your browser does not support the audio element.
+                </audio>
               </CardContent>
             </Card>
           )}
 
-          {call.followUpActions && call.followUpActions.length > 0 && (
-            <Card className="border-primary/20 bg-primary/5">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center text-primary">
-                  <CheckSquare className="w-4 h-4 mr-2" /> Follow-up Actions
+          <Card>
+            <CardHeader className="pb-3 border-b">
+              <CardTitle className="text-lg">Call Summary</CardTitle>
+            </CardHeader>
+            <CardContent className="p-6 pt-4 text-base leading-relaxed text-foreground/90 whitespace-pre-wrap">
+              {call.summary || "No summary available."}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3 border-b">
+              <CardTitle className="text-lg">Transcript</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <ScrollArea className="h-[500px] w-full p-6">
+                {call.messages && call.messages.length > 0 ? (
+                  <div className="space-y-6">
+                    {call.messages.filter(m => m.message).map((msg, i) => (
+                      <div key={i} className={`flex flex-col ${msg.role === 'assistant' ? 'items-start' : 'items-end'}`}>
+                        <span className="text-xs text-muted-foreground mb-1 font-medium px-1 uppercase tracking-wider">
+                          {msg.role}
+                        </span>
+                        <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm ${
+                          msg.role === 'assistant' 
+                            ? 'bg-muted text-foreground rounded-tl-sm' 
+                            : 'bg-primary text-primary-foreground rounded-tr-sm'
+                        }`}>
+                          {msg.message}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : call.transcript ? (
+                  <div className="text-sm whitespace-pre-wrap font-mono text-muted-foreground">
+                    {call.transcript}
+                  </div>
+                ) : (
+                  <div className="text-sm text-muted-foreground text-center py-10">
+                    No transcript available.
+                  </div>
+                )}
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Sidebar: Lead Data, Action Items, Sentiment */}
+        <div className="space-y-6">
+          
+          <Card>
+            <CardHeader className="pb-3 border-b">
+              <CardTitle className="text-lg">Intelligence</CardTitle>
+            </CardHeader>
+            <CardContent className="p-5 space-y-5">
+              <div>
+                <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider mb-2 block">Intent</span>
+                <Badge variant="secondary" className="text-sm px-3 py-1 font-medium">{call.sentiment?.intent || "Unknown"}</Badge>
+              </div>
+              <Separator />
+              <div>
+                <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider mb-2 block">Sentiment</span>
+                <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getSentimentColor(call.sentiment?.label)}`}>
+                  {call.sentiment?.label || "Neutral"}
+                  {call.sentiment?.score !== undefined && call.sentiment?.score !== null && (
+                    <span className="ml-2 opacity-70">({call.sentiment.score})</span>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {(call.lead && Object.values(call.lead).some(v => v)) ? (
+            <Card className="border-sidebar-primary/30 shadow-sm">
+              <CardHeader className="pb-3 border-b bg-sidebar-primary/5">
+                <CardTitle className="text-lg text-primary flex items-center gap-2">
+                  <User className="h-5 w-5 text-sidebar-primary" /> 
+                  Extracted Lead Data
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-0">
+                <dl className="divide-y divide-border/50 text-sm">
+                  {call.lead.name && (
+                    <div className="flex justify-between p-4">
+                      <dt className="text-muted-foreground font-medium">Name</dt>
+                      <dd className="font-semibold text-foreground text-right">{call.lead.name}</dd>
+                    </div>
+                  )}
+                  {call.lead.location && (
+                    <div className="flex justify-between p-4 bg-muted/20">
+                      <dt className="text-muted-foreground font-medium flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5"/> Location</dt>
+                      <dd className="font-semibold text-foreground text-right">{call.lead.location}</dd>
+                    </div>
+                  )}
+                  {call.lead.propertyType && (
+                    <div className="flex justify-between p-4">
+                      <dt className="text-muted-foreground font-medium flex items-center gap-1.5"><Home className="h-3.5 w-3.5"/> Property</dt>
+                      <dd className="font-semibold text-foreground text-right capitalize">{call.lead.propertyType}</dd>
+                    </div>
+                  )}
+                  {call.lead.budget && (
+                    <div className="flex justify-between p-4 bg-muted/20">
+                      <dt className="text-muted-foreground font-medium flex items-center gap-1.5"><DollarSign className="h-3.5 w-3.5"/> Budget</dt>
+                      <dd className="font-semibold text-foreground text-right">{call.lead.budget}</dd>
+                    </div>
+                  )}
+                  {call.lead.bedrooms && (
+                    <div className="flex justify-between p-4">
+                      <dt className="text-muted-foreground font-medium">Bedrooms</dt>
+                      <dd className="font-semibold text-foreground text-right">{call.lead.bedrooms}</dd>
+                    </div>
+                  )}
+                  {call.lead.email && (
+                    <div className="flex justify-between p-4 bg-muted/20">
+                      <dt className="text-muted-foreground font-medium">Email</dt>
+                      <dd className="font-semibold text-primary truncate max-w-[150px]" title={call.lead.email}>{call.lead.email}</dd>
+                    </div>
+                  )}
+                </dl>
+              </CardContent>
+            </Card>
+          ) : null}
+
+          {call.followUpActions && call.followUpActions.length > 0 && (
+            <Card>
+              <CardHeader className="pb-3 border-b">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                  Suggested Actions
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 bg-emerald-50/30 dark:bg-emerald-950/10">
                 <ul className="space-y-3">
                   {call.followUpActions.map((action, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm">
-                      <div className="w-5 h-5 rounded-full bg-background border border-primary/30 flex-shrink-0 flex items-center justify-center text-primary text-xs mt-0.5">
-                        {i + 1}
-                      </div>
-                      <span className="leading-relaxed">{action}</span>
+                    <li key={i} className="flex gap-3 text-sm text-foreground/90 leading-snug">
+                      <div className="mt-0.5 min-w-[6px] h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                      <span>{action}</span>
                     </li>
                   ))}
                 </ul>
               </CardContent>
             </Card>
           )}
-        </div>
 
-        {/* Right Column: AI Analysis & Transcript */}
-        <div className="lg:col-span-8 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card className="h-full">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm text-muted-foreground font-medium uppercase tracking-wider">AI Summary</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm leading-relaxed text-foreground">
-                  {call.summary || "No summary available."}
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="h-full">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm text-muted-foreground font-medium uppercase tracking-wider">Sentiment & Intent</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-col gap-4">
-                  <div>
-                    <div className="text-xs text-muted-foreground mb-1">Sentiment Analysis</div>
-                    <div className="flex items-center gap-3">
-                      <SentimentBadge label={call.sentiment?.label} score={call.sentiment?.score} className="text-sm px-3 py-1" />
-                      {call.sentiment?.score !== undefined && call.sentiment?.score !== null && (
-                        <span className="text-sm font-mono text-muted-foreground">
-                          Score: {call.sentiment.score.toFixed(2)}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  {call.sentiment?.intent && (
-                    <div>
-                      <div className="text-xs text-muted-foreground mb-1">Primary Intent</div>
-                      <div className="text-sm font-medium bg-muted inline-flex px-2 py-1 rounded-md">
-                        {call.sentiment.intent}
-                      </div>
-                    </div>
-                  )}
+          {call.status === "failed" && (
+            <Card className="border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/20">
+              <CardContent className="p-4 flex gap-3 text-red-800 dark:text-red-400 text-sm">
+                <AlertCircle className="h-5 w-5 shrink-0" />
+                <div>
+                  <p className="font-semibold mb-1">Call Failed</p>
+                  <p>{call.endedReason || "The call dropped unexpectedly before completion."}</p>
                 </div>
               </CardContent>
             </Card>
-          </div>
+          )}
 
-          <Card className="flex-1 flex flex-col h-[500px]">
-            <CardHeader className="pb-4 border-b border-border bg-muted/10">
-              <CardTitle className="text-base flex items-center">
-                <MessageSquare className="w-4 h-4 mr-2" /> Transcript
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0 overflow-y-auto flex-1">
-              <div className="p-6 space-y-6">
-                {call.messages && call.messages.length > 0 ? (
-                  call.messages.map((msg, idx) => {
-                    const isAgent = msg.role.toLowerCase() === 'agent' || msg.role.toLowerCase() === 'system';
-                    return (
-                      <div 
-                        key={idx} 
-                        className={cn(
-                          "flex flex-col max-w-[85%]",
-                          isAgent ? "mr-auto" : "ml-auto items-end"
-                        )}
-                      >
-                        <div className="text-xs text-muted-foreground mb-1 px-1 font-medium">
-                          {isAgent ? "AI Assistant" : (name)}
-                        </div>
-                        <div 
-                          className={cn(
-                            "p-3 rounded-2xl text-sm leading-relaxed",
-                            isAgent 
-                              ? "bg-muted text-foreground rounded-tl-sm" 
-                              : "bg-primary text-primary-foreground rounded-tr-sm"
-                          )}
-                        >
-                          {msg.message}
-                        </div>
-                      </div>
-                    )
-                  })
-                ) : (
-                  <div className="text-center py-12 text-muted-foreground flex flex-col items-center">
-                    <MessageSquare className="w-8 h-8 mb-3 opacity-20" />
-                    <p>Transcript is not available for this call.</p>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
         </div>
       </div>
     </div>
-  )
+  );
 }

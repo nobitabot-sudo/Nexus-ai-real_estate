@@ -12,13 +12,16 @@ tags:
     description: Health operations
   - name: calls
     description: VAPI call data operations
+  - name: admin
+    description: Admin client management
+  - name: clients
+    description: Client self-service
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -31,8 +34,7 @@ paths:
     get:
       operationId: listCalls
       tags: [calls]
-      summary: List all VAPI calls
-      description: Returns paginated list of calls with summary info
+      summary: List VAPI calls (filtered by caller's assistant if client)
       parameters:
         - name: limit
           in: query
@@ -47,6 +49,10 @@ paths:
           in: query
           schema:
             type: ["string", "null"]
+        - name: assistantId
+          in: query
+          schema:
+            type: ["string", "null"]
       responses:
         "200":
           description: List of calls
@@ -56,13 +62,23 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/CallSummary"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /calls/stats:
     get:
       operationId: getCallStats
       tags: [calls]
       summary: Get dashboard statistics
-      description: Returns aggregated stats across all calls
+      parameters:
+        - name: assistantId
+          in: query
+          schema:
+            type: ["string", "null"]
       responses:
         "200":
           description: Call statistics
@@ -70,13 +86,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CallStats"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /calls/{id}:
     get:
       operationId: getCall
       tags: [calls]
       summary: Get a single call detail
-      description: Returns full call details including transcript, recording, lead info
       parameters:
         - name: id
           in: path
@@ -90,8 +111,189 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CallDetail"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "404":
           description: Call not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/clients:
+    get:
+      operationId: listAdminClients
+      tags: [admin]
+      summary: List all clients (admin only)
+      responses:
+        "200":
+          description: All clients
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ClientRecord"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      operationId: createAdminClient
+      tags: [admin]
+      summary: Create a new client (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClientInput"
+      responses:
+        "201":
+          description: Created client
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClientRecord"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/clients/{id}:
+    patch:
+      operationId: updateAdminClient
+      tags: [admin]
+      summary: Update a client (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClientUpdate"
+      responses:
+        "200":
+          description: Updated client
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClientRecord"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteAdminClient
+      tags: [admin]
+      summary: Delete a client (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /clients/me:
+    get:
+      operationId: getMyClient
+      tags: [clients]
+      summary: Get current logged-in client record
+      responses:
+        "200":
+          description: Current client
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClientRecord"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not yet linked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /clients/onboard:
+    post:
+      operationId: onboardClient
+      tags: [clients]
+      summary: Link a clientCode to the logged-in user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OnboardInput"
+      responses:
+        "200":
+          description: Linked successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClientRecord"
+        "400":
+          description: Invalid or already-used code
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/me:
+    get:
+      operationId: getAuthMe
+      tags: [clients]
+      summary: Get current user role (admin or client)
+      responses:
+        "200":
+          description: Current user info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthMeResponse"
+        "401":
+          description: Unauthorized
           content:
             application/json:
               schema:
@@ -104,16 +306,14 @@ components:
       properties:
         status:
           type: string
-      required:
-        - status
+      required: [status]
 
     ErrorResponse:
       type: object
       properties:
         error:
           type: string
-      required:
-        - error
+      required: [error]
 
     LeadInfo:
       type: object
@@ -172,11 +372,7 @@ components:
           $ref: "#/components/schemas/LeadInfo"
         hasRecording:
           type: boolean
-      required:
-        - id
-        - status
-        - createdAt
-        - hasRecording
+      required: [id, status, createdAt, hasRecording]
 
     CallDetail:
       type: object
@@ -221,13 +417,7 @@ components:
             $ref: "#/components/schemas/CallMessage"
         cost:
           type: ["number", "null"]
-      required:
-        - id
-        - status
-        - createdAt
-        - hasRecording
-        - followUpActions
-        - messages
+      required: [id, status, createdAt, hasRecording, followUpActions, messages]
 
     CallMessage:
       type: object
@@ -242,8 +432,7 @@ components:
           type: ["number", "null"]
         duration:
           type: ["number", "null"]
-      required:
-        - role
+      required: [role]
 
     SentimentBreakdown:
       type: object
@@ -254,10 +443,7 @@ components:
           type: integer
         negative:
           type: integer
-      required:
-        - positive
-        - neutral
-        - negative
+      required: [positive, neutral, negative]
 
     DailyCallCount:
       type: object
@@ -266,9 +452,7 @@ components:
           type: string
         count:
           type: integer
-      required:
-        - date
-        - count
+      required: [date, count]
 
     CallStats:
       type: object
@@ -293,11 +477,68 @@ components:
           type: integer
         callsLastWeek:
           type: integer
-      required:
-        - totalCalls
-        - answeredCalls
-        - sentimentBreakdown
-        - callsByDay
-        - topIntents
-        - callsThisWeek
-        - callsLastWeek
+      required: [totalCalls, answeredCalls, sentimentBreakdown, callsByDay, topIntents, callsThisWeek, callsLastWeek]
+
+    ClientRecord:
+      type: object
+      properties:
+        id:
+          type: integer
+        clientCode:
+          type: string
+        name:
+          type: string
+        assistantId:
+          type: string
+        niche:
+          type: ["string", "null"]
+        clerkUserId:
+          type: ["string", "null"]
+        isLinked:
+          type: boolean
+        createdAt:
+          type: string
+      required: [id, clientCode, name, assistantId, isLinked, createdAt]
+
+    ClientInput:
+      type: object
+      properties:
+        clientCode:
+          type: string
+        name:
+          type: string
+        assistantId:
+          type: string
+        niche:
+          type: ["string", "null"]
+      required: [clientCode, name, assistantId]
+
+    ClientUpdate:
+      type: object
+      properties:
+        name:
+          type: ["string", "null"]
+        assistantId:
+          type: ["string", "null"]
+        niche:
+          type: ["string", "null"]
+
+    OnboardInput:
+      type: object
+      properties:
+        clientCode:
+          type: string
+      required: [clientCode]
+
+    AuthMeResponse:
+      type: object
+      properties:
+        role:
+          type: string
+        clerkUserId:
+          type: string
+        email:
+          type: ["string", "null"]
+        isFirstUser:
+          type: boolean
+      required: [role, clerkUserId, isFirstUser]
