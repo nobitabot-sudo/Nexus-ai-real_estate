@@ -3,13 +3,15 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Real estate AI calling agent dashboard API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: calls
+    description: VAPI call data operations
 paths:
   /healthz:
     get:
@@ -24,6 +26,77 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /calls:
+    get:
+      operationId: listCalls
+      tags: [calls]
+      summary: List all VAPI calls
+      description: Returns paginated list of calls with summary info
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: createdAtGt
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: status
+          in: query
+          schema:
+            type: ["string", "null"]
+      responses:
+        "200":
+          description: List of calls
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CallSummary"
+
+  /calls/stats:
+    get:
+      operationId: getCallStats
+      tags: [calls]
+      summary: Get dashboard statistics
+      description: Returns aggregated stats across all calls
+      responses:
+        "200":
+          description: Call statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CallStats"
+
+  /calls/{id}:
+    get:
+      operationId: getCall
+      tags: [calls]
+      summary: Get a single call detail
+      description: Returns full call details including transcript, recording, lead info
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Call detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CallDetail"
+        "404":
+          description: Call not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +107,197 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    LeadInfo:
+      type: object
+      properties:
+        name:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        email:
+          type: ["string", "null"]
+        propertyType:
+          type: ["string", "null"]
+        budget:
+          type: ["string", "null"]
+        location:
+          type: ["string", "null"]
+        bedrooms:
+          type: ["string", "null"]
+
+    SentimentInfo:
+      type: object
+      properties:
+        score:
+          type: ["number", "null"]
+        label:
+          type: ["string", "null"]
+        intent:
+          type: ["string", "null"]
+
+    CallSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        status:
+          type: string
+        createdAt:
+          type: string
+        startedAt:
+          type: ["string", "null"]
+        endedAt:
+          type: ["string", "null"]
+        durationSeconds:
+          type: ["number", "null"]
+        endedReason:
+          type: ["string", "null"]
+        customerName:
+          type: ["string", "null"]
+        customerPhone:
+          type: ["string", "null"]
+        summary:
+          type: ["string", "null"]
+        sentiment:
+          $ref: "#/components/schemas/SentimentInfo"
+        lead:
+          $ref: "#/components/schemas/LeadInfo"
+        hasRecording:
+          type: boolean
+      required:
+        - id
+        - status
+        - createdAt
+        - hasRecording
+
+    CallDetail:
+      type: object
+      properties:
+        id:
+          type: string
+        status:
+          type: string
+        createdAt:
+          type: string
+        startedAt:
+          type: ["string", "null"]
+        endedAt:
+          type: ["string", "null"]
+        durationSeconds:
+          type: ["number", "null"]
+        endedReason:
+          type: ["string", "null"]
+        customerName:
+          type: ["string", "null"]
+        customerPhone:
+          type: ["string", "null"]
+        summary:
+          type: ["string", "null"]
+        transcript:
+          type: ["string", "null"]
+        recordingUrl:
+          type: ["string", "null"]
+        stereoRecordingUrl:
+          type: ["string", "null"]
+        sentiment:
+          $ref: "#/components/schemas/SentimentInfo"
+        lead:
+          $ref: "#/components/schemas/LeadInfo"
+        followUpActions:
+          type: array
+          items:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/CallMessage"
+        cost:
+          type: ["number", "null"]
+      required:
+        - id
+        - status
+        - createdAt
+        - hasRecording
+        - followUpActions
+        - messages
+
+    CallMessage:
+      type: object
+      properties:
+        role:
+          type: string
+        message:
+          type: ["string", "null"]
+        time:
+          type: ["number", "null"]
+        endTime:
+          type: ["number", "null"]
+        duration:
+          type: ["number", "null"]
+      required:
+        - role
+
+    SentimentBreakdown:
+      type: object
+      properties:
+        positive:
+          type: integer
+        neutral:
+          type: integer
+        negative:
+          type: integer
+      required:
+        - positive
+        - neutral
+        - negative
+
+    DailyCallCount:
+      type: object
+      properties:
+        date:
+          type: string
+        count:
+          type: integer
+      required:
+        - date
+        - count
+
+    CallStats:
+      type: object
+      properties:
+        totalCalls:
+          type: integer
+        answeredCalls:
+          type: integer
+        avgDurationSeconds:
+          type: ["number", "null"]
+        sentimentBreakdown:
+          $ref: "#/components/schemas/SentimentBreakdown"
+        callsByDay:
+          type: array
+          items:
+            $ref: "#/components/schemas/DailyCallCount"
+        topIntents:
+          type: array
+          items:
+            type: string
+        callsThisWeek:
+          type: integer
+        callsLastWeek:
+          type: integer
+      required:
+        - totalCalls
+        - answeredCalls
+        - sentimentBreakdown
+        - callsByDay
+        - topIntents
+        - callsThisWeek
+        - callsLastWeek
