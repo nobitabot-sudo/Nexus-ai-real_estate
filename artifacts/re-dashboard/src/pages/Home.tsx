@@ -2,14 +2,23 @@ import { Link, Redirect } from "wouter";
 import { Building2, ArrowRight, ShieldCheck, PhoneCall, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUser, Show } from "@clerk/react";
+import { useGetAuthMe, useGetMyClient } from "@workspace/api-client-react";
 
 export default function Home() {
   const { isSignedIn } = useUser();
+  const { data: authMe } = useGetAuthMe({ query: { enabled: isSignedIn } });
+  const { data: myClient } = useGetMyClient({
+    query: { enabled: isSignedIn && authMe?.role === "client", retry: false },
+  });
 
   return (
     <>
       <Show when="signed-in">
-        <Redirect to="/dashboard" />
+        {authMe?.role === "admin" ? (
+          <Redirect to="/admin" />
+        ) : authMe?.role === "client" ? (
+          myClient?.isLinked ? <Redirect to="/dashboard" /> : <Redirect to="/onboard" />
+        ) : null}
       </Show>
       
       <Show when="signed-out">
@@ -53,7 +62,7 @@ export default function Home() {
             </div>
 
             <p className="mt-6 text-sm text-muted-foreground">
-              To get started, sign up — the first account created is automatically designated as the admin.
+              Already have a client code from your account manager? Sign up above, then enter it on the next screen to access your dashboard.
             </p>
           </main>
 
