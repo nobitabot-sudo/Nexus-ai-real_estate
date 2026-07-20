@@ -12,4 +12,9 @@ export interface ClientInput {
   assistantId: string;
   /** @nullable */
   niche?: string | null;
+  planType: string;
+  /** @nullable */
+  phoneNumberId?: string | null;
+  /** @nullable */
+  callLimit?: number | null;
 }

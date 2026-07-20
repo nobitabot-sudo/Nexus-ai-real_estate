@@ -8,17 +8,11 @@
 import * as zod from 'zod';
 
 
-/**
- * @summary Health check
- */
 export const HealthCheckResponse = zod.object({
   "status": zod.string()
 })
 
 
-/**
- * @summary List VAPI calls (filtered by caller's assistant if client)
- */
 export const listCallsQueryLimitDefault = 50;
 
 export const ListCallsQueryParams = zod.object({
@@ -58,9 +52,6 @@ export const ListCallsResponseItem = zod.object({
 export const ListCallsResponse = zod.array(ListCallsResponseItem)
 
 
-/**
- * @summary Get dashboard statistics
- */
 export const GetCallStatsQueryParams = zod.object({
   "assistantId": zod.coerce.string().nullish()
 })
@@ -84,9 +75,6 @@ export const GetCallStatsResponse = zod.object({
 })
 
 
-/**
- * @summary Get a single call detail
- */
 export const GetCallParams = zod.object({
   "id": zod.coerce.string()
 })
@@ -131,15 +119,15 @@ export const GetCallResponse = zod.object({
 })
 
 
-/**
- * @summary List all clients (admin only)
- */
 export const ListAdminClientsResponseItem = zod.object({
   "id": zod.number(),
   "clientCode": zod.string(),
   "name": zod.string(),
   "assistantId": zod.string(),
   "niche": zod.string().nullish(),
+  "planType": zod.string(),
+  "phoneNumberId": zod.string().nullish(),
+  "callLimit": zod.number().nullish(),
   "clerkUserId": zod.string().nullish(),
   "isLinked": zod.boolean(),
   "createdAt": zod.string()
@@ -147,14 +135,14 @@ export const ListAdminClientsResponseItem = zod.object({
 export const ListAdminClientsResponse = zod.array(ListAdminClientsResponseItem)
 
 
-/**
- * @summary Create a new client (admin only)
- */
 export const CreateAdminClientBody = zod.object({
   "clientCode": zod.string(),
   "name": zod.string(),
   "assistantId": zod.string(),
-  "niche": zod.string().nullish()
+  "niche": zod.string().nullish(),
+  "planType": zod.string(),
+  "phoneNumberId": zod.string().nullish(),
+  "callLimit": zod.number().nullish()
 })
 
 export const CreateAdminClientResponse = zod.object({
@@ -163,23 +151,27 @@ export const CreateAdminClientResponse = zod.object({
   "name": zod.string(),
   "assistantId": zod.string(),
   "niche": zod.string().nullish(),
+  "planType": zod.string(),
+  "phoneNumberId": zod.string().nullish(),
+  "callLimit": zod.number().nullish(),
   "clerkUserId": zod.string().nullish(),
   "isLinked": zod.boolean(),
   "createdAt": zod.string()
 })
 
 
-/**
- * @summary Update a client (admin only)
- */
 export const UpdateAdminClientParams = zod.object({
   "id": zod.coerce.number()
 })
 
 export const UpdateAdminClientBody = zod.object({
+  "clientCode": zod.string().nullish(),
   "name": zod.string().nullish(),
   "assistantId": zod.string().nullish(),
-  "niche": zod.string().nullish()
+  "niche": zod.string().nullish(),
+  "planType": zod.string().nullish(),
+  "phoneNumberId": zod.string().nullish(),
+  "callLimit": zod.number().nullish()
 })
 
 export const UpdateAdminClientResponse = zod.object({
@@ -188,15 +180,15 @@ export const UpdateAdminClientResponse = zod.object({
   "name": zod.string(),
   "assistantId": zod.string(),
   "niche": zod.string().nullish(),
+  "planType": zod.string(),
+  "phoneNumberId": zod.string().nullish(),
+  "callLimit": zod.number().nullish(),
   "clerkUserId": zod.string().nullish(),
   "isLinked": zod.boolean(),
   "createdAt": zod.string()
 })
 
 
-/**
- * @summary Delete a client (admin only)
- */
 export const DeleteAdminClientParams = zod.object({
   "id": zod.coerce.number()
 })
@@ -204,24 +196,40 @@ export const DeleteAdminClientParams = zod.object({
 export const DeleteAdminClientResponse = zod.void()
 
 
-/**
- * @summary Get current logged-in client record
- */
 export const GetMyClientResponse = zod.object({
   "id": zod.number(),
   "clientCode": zod.string(),
   "name": zod.string(),
   "assistantId": zod.string(),
   "niche": zod.string().nullish(),
+  "planType": zod.string(),
+  "phoneNumberId": zod.string().nullish(),
+  "callLimit": zod.number().nullish(),
   "clerkUserId": zod.string().nullish(),
   "isLinked": zod.boolean(),
   "createdAt": zod.string()
 })
 
 
-/**
- * @summary Link a clientCode to the logged-in user
- */
+export const ListMyLeadsResponseItem = zod.object({
+  "id": zod.number(),
+  "clientId": zod.number(),
+  "firstName": zod.string(),
+  "lastName": zod.string().nullish(),
+  "phone": zod.string(),
+  "email": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "status": zod.string(),
+  "vapiCallId": zod.string().nullish(),
+  "callSummary": zod.string().nullish(),
+  "callSentiment": zod.string().nullish(),
+  "callDurationSeconds": zod.number().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+export const ListMyLeadsResponse = zod.array(ListMyLeadsResponseItem)
+
+
 export const OnboardClientBody = zod.object({
   "clientCode": zod.string()
 })
@@ -232,15 +240,15 @@ export const OnboardClientResponse = zod.object({
   "name": zod.string(),
   "assistantId": zod.string(),
   "niche": zod.string().nullish(),
+  "planType": zod.string(),
+  "phoneNumberId": zod.string().nullish(),
+  "callLimit": zod.number().nullish(),
   "clerkUserId": zod.string().nullish(),
   "isLinked": zod.boolean(),
   "createdAt": zod.string()
 })
 
 
-/**
- * @summary Get current user role (admin or client)
- */
 export const GetAuthMeResponse = zod.object({
   "role": zod.string(),
   "clerkUserId": zod.string(),

@@ -13,6 +13,11 @@ export interface ClientRecord {
   assistantId: string;
   /** @nullable */
   niche?: string | null;
+  planType: string;
+  /** @nullable */
+  phoneNumberId?: string | null;
+  /** @nullable */
+  callLimit?: number | null;
   /** @nullable */
   clerkUserId?: string | null;
   isLinked: boolean;

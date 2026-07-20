@@ -1,544 +1,460 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
   description: Real estate AI calling agent dashboard API
 servers:
   - url: /api
-    description: Base API path
 tags:
   - name: health
-    description: Health operations
   - name: calls
-    description: VAPI call data operations
   - name: admin
-    description: Admin client management
   - name: clients
-    description: Client self-service
+  - name: leads
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
-      summary: Health check
       responses:
         "200":
-          description: Healthy
+          description: OK
           content:
             application/json:
-              schema:
-                $ref: "#/components/schemas/HealthStatus"
+              schema: { $ref: "#/components/schemas/HealthStatus" }
 
   /calls:
     get:
       operationId: listCalls
       tags: [calls]
-      summary: List VAPI calls (filtered by caller's assistant if client)
       parameters:
         - name: limit
           in: query
-          schema:
-            type: integer
-            default: 50
+          schema: { type: integer, default: 50 }
         - name: createdAtGt
           in: query
-          schema:
-            type: ["string", "null"]
+          schema: { type: ["string","null"] }
         - name: status
           in: query
-          schema:
-            type: ["string", "null"]
+          schema: { type: ["string","null"] }
         - name: assistantId
           in: query
-          schema:
-            type: ["string", "null"]
+          schema: { type: ["string","null"] }
       responses:
         "200":
-          description: List of calls
+          description: OK
           content:
             application/json:
               schema:
                 type: array
-                items:
-                  $ref: "#/components/schemas/CallSummary"
+                items: { $ref: "#/components/schemas/CallSummary" }
         "401":
           description: Unauthorized
           content:
             application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
 
   /calls/stats:
     get:
       operationId: getCallStats
       tags: [calls]
-      summary: Get dashboard statistics
       parameters:
         - name: assistantId
           in: query
-          schema:
-            type: ["string", "null"]
+          schema: { type: ["string","null"] }
       responses:
         "200":
-          description: Call statistics
+          description: OK
           content:
             application/json:
-              schema:
-                $ref: "#/components/schemas/CallStats"
+              schema: { $ref: "#/components/schemas/CallStats" }
         "401":
           description: Unauthorized
           content:
             application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
 
   /calls/{id}:
     get:
       operationId: getCall
       tags: [calls]
-      summary: Get a single call detail
       parameters:
         - name: id
           in: path
           required: true
-          schema:
-            type: string
+          schema: { type: string }
       responses:
         "200":
-          description: Call detail
+          description: OK
           content:
             application/json:
-              schema:
-                $ref: "#/components/schemas/CallDetail"
+              schema: { $ref: "#/components/schemas/CallDetail" }
         "401":
           description: Unauthorized
           content:
             application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
         "404":
-          description: Call not found
+          description: Not Found
           content:
             application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
 
   /admin/clients:
     get:
       operationId: listAdminClients
       tags: [admin]
-      summary: List all clients (admin only)
       responses:
         "200":
-          description: All clients
+          description: OK
           content:
             application/json:
               schema:
                 type: array
-                items:
-                  $ref: "#/components/schemas/ClientRecord"
+                items: { $ref: "#/components/schemas/ClientRecord" }
         "401":
           description: Unauthorized
           content:
             application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "403":
-          description: Forbidden
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
     post:
       operationId: createAdminClient
       tags: [admin]
-      summary: Create a new client (admin only)
       requestBody:
         required: true
         content:
           application/json:
-            schema:
-              $ref: "#/components/schemas/ClientInput"
+            schema: { $ref: "#/components/schemas/ClientInput" }
       responses:
         "201":
-          description: Created client
+          description: Created
           content:
             application/json:
-              schema:
-                $ref: "#/components/schemas/ClientRecord"
+              schema: { $ref: "#/components/schemas/ClientRecord" }
         "400":
-          description: Bad request
+          description: Bad Request
           content:
             application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
 
   /admin/clients/{id}:
     patch:
       operationId: updateAdminClient
       tags: [admin]
-      summary: Update a client (admin only)
       parameters:
         - name: id
           in: path
           required: true
-          schema:
-            type: integer
+          schema: { type: integer }
       requestBody:
         required: true
         content:
           application/json:
-            schema:
-              $ref: "#/components/schemas/ClientUpdate"
+            schema: { $ref: "#/components/schemas/ClientUpdate" }
       responses:
         "200":
-          description: Updated client
+          description: OK
           content:
             application/json:
-              schema:
-                $ref: "#/components/schemas/ClientRecord"
+              schema: { $ref: "#/components/schemas/ClientRecord" }
         "404":
-          description: Not found
+          description: Not Found
           content:
             application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
     delete:
       operationId: deleteAdminClient
       tags: [admin]
-      summary: Delete a client (admin only)
       parameters:
         - name: id
           in: path
           required: true
-          schema:
-            type: integer
+          schema: { type: integer }
       responses:
         "204":
           description: Deleted
         "404":
-          description: Not found
+          description: Not Found
           content:
             application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
 
   /clients/me:
     get:
       operationId: getMyClient
       tags: [clients]
-      summary: Get current logged-in client record
       responses:
         "200":
-          description: Current client
+          description: OK
           content:
             application/json:
-              schema:
-                $ref: "#/components/schemas/ClientRecord"
+              schema: { $ref: "#/components/schemas/ClientRecord" }
         "401":
           description: Unauthorized
           content:
             application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
         "404":
-          description: Not yet linked
+          description: Not Found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /clients/me/leads:
+    get:
+      operationId: listMyLeads
+      tags: [leads]
+      responses:
+        "200":
+          description: OK
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                type: array
+                items: { $ref: "#/components/schemas/LeadRecord" }
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
 
   /clients/onboard:
     post:
       operationId: onboardClient
       tags: [clients]
-      summary: Link a clientCode to the logged-in user
       requestBody:
         required: true
         content:
           application/json:
-            schema:
-              $ref: "#/components/schemas/OnboardInput"
+            schema: { $ref: "#/components/schemas/OnboardInput" }
       responses:
         "200":
-          description: Linked successfully
+          description: OK
           content:
             application/json:
-              schema:
-                $ref: "#/components/schemas/ClientRecord"
+              schema: { $ref: "#/components/schemas/ClientRecord" }
         "400":
-          description: Invalid or already-used code
+          description: Bad Request
           content:
             application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
 
   /auth/me:
     get:
       operationId: getAuthMe
       tags: [clients]
-      summary: Get current user role (admin or client)
       responses:
         "200":
-          description: Current user info
+          description: OK
           content:
             application/json:
-              schema:
-                $ref: "#/components/schemas/AuthMeResponse"
+              schema: { $ref: "#/components/schemas/AuthMeResponse" }
         "401":
           description: Unauthorized
           content:
             application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
 
 components:
   schemas:
     HealthStatus:
       type: object
       properties:
-        status:
-          type: string
+        status: { type: string }
       required: [status]
 
     ErrorResponse:
       type: object
       properties:
-        error:
-          type: string
+        error: { type: string }
       required: [error]
 
     LeadInfo:
       type: object
       properties:
-        name:
-          type: ["string", "null"]
-        phone:
-          type: ["string", "null"]
-        email:
-          type: ["string", "null"]
-        propertyType:
-          type: ["string", "null"]
-        budget:
-          type: ["string", "null"]
-        location:
-          type: ["string", "null"]
-        bedrooms:
-          type: ["string", "null"]
+        name: { type: ["string","null"] }
+        phone: { type: ["string","null"] }
+        email: { type: ["string","null"] }
+        propertyType: { type: ["string","null"] }
+        budget: { type: ["string","null"] }
+        location: { type: ["string","null"] }
+        bedrooms: { type: ["string","null"] }
 
     SentimentInfo:
       type: object
       properties:
-        score:
-          type: ["number", "null"]
-        label:
-          type: ["string", "null"]
-        intent:
-          type: ["string", "null"]
+        score: { type: ["number","null"] }
+        label: { type: ["string","null"] }
+        intent: { type: ["string","null"] }
 
     CallSummary:
       type: object
       properties:
-        id:
-          type: string
-        status:
-          type: string
-        createdAt:
-          type: string
-        startedAt:
-          type: ["string", "null"]
-        endedAt:
-          type: ["string", "null"]
-        durationSeconds:
-          type: ["number", "null"]
-        endedReason:
-          type: ["string", "null"]
-        customerName:
-          type: ["string", "null"]
-        customerPhone:
-          type: ["string", "null"]
-        summary:
-          type: ["string", "null"]
-        sentiment:
-          $ref: "#/components/schemas/SentimentInfo"
-        lead:
-          $ref: "#/components/schemas/LeadInfo"
-        hasRecording:
-          type: boolean
+        id: { type: string }
+        status: { type: string }
+        createdAt: { type: string }
+        startedAt: { type: ["string","null"] }
+        endedAt: { type: ["string","null"] }
+        durationSeconds: { type: ["number","null"] }
+        endedReason: { type: ["string","null"] }
+        customerName: { type: ["string","null"] }
+        customerPhone: { type: ["string","null"] }
+        summary: { type: ["string","null"] }
+        sentiment: { $ref: "#/components/schemas/SentimentInfo" }
+        lead: { $ref: "#/components/schemas/LeadInfo" }
+        hasRecording: { type: boolean }
       required: [id, status, createdAt, hasRecording]
 
     CallDetail:
       type: object
       properties:
-        id:
-          type: string
-        status:
-          type: string
-        createdAt:
-          type: string
-        startedAt:
-          type: ["string", "null"]
-        endedAt:
-          type: ["string", "null"]
-        durationSeconds:
-          type: ["number", "null"]
-        endedReason:
-          type: ["string", "null"]
-        customerName:
-          type: ["string", "null"]
-        customerPhone:
-          type: ["string", "null"]
-        summary:
-          type: ["string", "null"]
-        transcript:
-          type: ["string", "null"]
-        recordingUrl:
-          type: ["string", "null"]
-        stereoRecordingUrl:
-          type: ["string", "null"]
-        sentiment:
-          $ref: "#/components/schemas/SentimentInfo"
-        lead:
-          $ref: "#/components/schemas/LeadInfo"
+        id: { type: string }
+        status: { type: string }
+        createdAt: { type: string }
+        startedAt: { type: ["string","null"] }
+        endedAt: { type: ["string","null"] }
+        durationSeconds: { type: ["number","null"] }
+        endedReason: { type: ["string","null"] }
+        customerName: { type: ["string","null"] }
+        customerPhone: { type: ["string","null"] }
+        summary: { type: ["string","null"] }
+        transcript: { type: ["string","null"] }
+        recordingUrl: { type: ["string","null"] }
+        stereoRecordingUrl: { type: ["string","null"] }
+        sentiment: { $ref: "#/components/schemas/SentimentInfo" }
+        lead: { $ref: "#/components/schemas/LeadInfo" }
         followUpActions:
           type: array
-          items:
-            type: string
+          items: { type: string }
         messages:
           type: array
-          items:
-            $ref: "#/components/schemas/CallMessage"
-        cost:
-          type: ["number", "null"]
-      required: [id, status, createdAt, hasRecording, followUpActions, messages]
+          items: { $ref: "#/components/schemas/CallMessage" }
+        cost: { type: ["number","null"] }
+      required: [id, status, createdAt, followUpActions, messages]
 
     CallMessage:
       type: object
       properties:
-        role:
-          type: string
-        message:
-          type: ["string", "null"]
-        time:
-          type: ["number", "null"]
-        endTime:
-          type: ["number", "null"]
-        duration:
-          type: ["number", "null"]
+        role: { type: string }
+        message: { type: ["string","null"] }
+        time: { type: ["number","null"] }
+        endTime: { type: ["number","null"] }
+        duration: { type: ["number","null"] }
       required: [role]
 
     SentimentBreakdown:
       type: object
       properties:
-        positive:
-          type: integer
-        neutral:
-          type: integer
-        negative:
-          type: integer
+        positive: { type: integer }
+        neutral: { type: integer }
+        negative: { type: integer }
       required: [positive, neutral, negative]
 
     DailyCallCount:
       type: object
       properties:
-        date:
-          type: string
-        count:
-          type: integer
+        date: { type: string }
+        count: { type: integer }
       required: [date, count]
 
     CallStats:
       type: object
       properties:
-        totalCalls:
-          type: integer
-        answeredCalls:
-          type: integer
-        avgDurationSeconds:
-          type: ["number", "null"]
-        sentimentBreakdown:
-          $ref: "#/components/schemas/SentimentBreakdown"
+        totalCalls: { type: integer }
+        answeredCalls: { type: integer }
+        avgDurationSeconds: { type: ["number","null"] }
+        sentimentBreakdown: { $ref: "#/components/schemas/SentimentBreakdown" }
         callsByDay:
           type: array
-          items:
-            $ref: "#/components/schemas/DailyCallCount"
+          items: { $ref: "#/components/schemas/DailyCallCount" }
         topIntents:
           type: array
-          items:
-            type: string
-        callsThisWeek:
-          type: integer
-        callsLastWeek:
-          type: integer
+          items: { type: string }
+        callsThisWeek: { type: integer }
+        callsLastWeek: { type: integer }
       required: [totalCalls, answeredCalls, sentimentBreakdown, callsByDay, topIntents, callsThisWeek, callsLastWeek]
 
     ClientRecord:
       type: object
       properties:
-        id:
-          type: integer
-        clientCode:
-          type: string
-        name:
-          type: string
-        assistantId:
-          type: string
-        niche:
-          type: ["string", "null"]
-        clerkUserId:
-          type: ["string", "null"]
-        isLinked:
-          type: boolean
-        createdAt:
-          type: string
-      required: [id, clientCode, name, assistantId, isLinked, createdAt]
+        id: { type: integer }
+        clientCode: { type: string }
+        name: { type: string }
+        assistantId: { type: string }
+        niche: { type: ["string","null"] }
+        planType: { type: string }
+        phoneNumberId: { type: ["string","null"] }
+        callLimit: { type: ["integer","null"] }
+        clerkUserId: { type: ["string","null"] }
+        isLinked: { type: boolean }
+        createdAt: { type: string }
+      required: [id, clientCode, name, assistantId, planType, isLinked, createdAt]
 
     ClientInput:
       type: object
       properties:
-        clientCode:
-          type: string
-        name:
-          type: string
-        assistantId:
-          type: string
-        niche:
-          type: ["string", "null"]
-      required: [clientCode, name, assistantId]
+        clientCode: { type: string }
+        name: { type: string }
+        assistantId: { type: string }
+        niche: { type: ["string","null"] }
+        planType: { type: string }
+        phoneNumberId: { type: ["string","null"] }
+        callLimit: { type: ["integer","null"] }
+      required: [clientCode, name, assistantId, planType]
 
     ClientUpdate:
       type: object
       properties:
-        name:
-          type: ["string", "null"]
-        assistantId:
-          type: ["string", "null"]
-        niche:
-          type: ["string", "null"]
+        clientCode: { type: ["string","null"] }
+        name: { type: ["string","null"] }
+        assistantId: { type: ["string","null"] }
+        niche: { type: ["string","null"] }
+        planType: { type: ["string","null"] }
+        phoneNumberId: { type: ["string","null"] }
+        callLimit: { type: ["integer","null"] }
 
     OnboardInput:
       type: object
       properties:
-        clientCode:
-          type: string
+        clientCode: { type: string }
       required: [clientCode]
 
     AuthMeResponse:
       type: object
       properties:
-        role:
-          type: string
-        clerkUserId:
-          type: string
-        email:
-          type: ["string", "null"]
-        isFirstUser:
-          type: boolean
+        role: { type: string }
+        clerkUserId: { type: string }
+        email: { type: ["string","null"] }
+        isFirstUser: { type: boolean }
       required: [role, clerkUserId, isFirstUser]
+
+    LeadRecord:
+      type: object
+      properties:
+        id: { type: integer }
+        clientId: { type: integer }
+        firstName: { type: string }
+        lastName: { type: ["string","null"] }
+        phone: { type: string }
+        email: { type: ["string","null"] }
+        notes: { type: ["string","null"] }
+        status: { type: string }
+        vapiCallId: { type: ["string","null"] }
+        callSummary: { type: ["string","null"] }
+        callSentiment: { type: ["string","null"] }
+        callDurationSeconds: { type: ["integer","null"] }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+      required: [id, clientId, firstName, phone, status, createdAt, updatedAt]
+
+    UploadLeadsResponse:
+      type: object
+      properties:
+        inserted: { type: integer }
+        queued: { type: integer }
+        errors: { type: integer }
+        message: { type: string }
+      required: [inserted, queued, errors, message]
+

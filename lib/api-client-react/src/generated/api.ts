@@ -30,6 +30,7 @@ import type {
   ErrorResponse,
   GetCallStatsParams,
   HealthStatus,
+  LeadRecord,
   ListCallsParams,
   OnboardInput
 } from './api.schemas';
@@ -69,9 +70,6 @@ export const getHealthCheckUrl = () => {
   return `/api/healthz`
 }
 
-/**
- * @summary Health check
- */
 export const healthCheck = async ( options?: RequestInit): Promise<HealthStatus> => {
 
   return customFetch<HealthStatus>(getHealthCheckUrl(),
@@ -116,9 +114,6 @@ export type HealthCheckQueryResult = NonNullable<Awaited<ReturnType<typeof healt
 export type HealthCheckQueryError = ErrorType<unknown>
 
 
-/**
- * @summary Health check
- */
 
 export function useHealthCheck<TData = Awaited<ReturnType<typeof healthCheck>>, TError = ErrorType<unknown>>(
   options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof healthCheck>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
@@ -153,9 +148,6 @@ export const getListCallsUrl = (params?: ListCallsParams,) => {
   return stringifiedParams.length > 0 ? `/api/calls?${stringifiedParams}` : `/api/calls`
 }
 
-/**
- * @summary List VAPI calls (filtered by caller's assistant if client)
- */
 export const listCalls = async (params?: ListCallsParams, options?: RequestInit): Promise<CallSummary[]> => {
 
   return customFetch<CallSummary[]>(getListCallsUrl(params),
@@ -200,9 +192,6 @@ export type ListCallsQueryResult = NonNullable<Awaited<ReturnType<typeof listCal
 export type ListCallsQueryError = ErrorType<ErrorResponse>
 
 
-/**
- * @summary List VAPI calls (filtered by caller's assistant if client)
- */
 
 export function useListCalls<TData = Awaited<ReturnType<typeof listCalls>>, TError = ErrorType<ErrorResponse>>(
  params?: ListCallsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listCalls>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
@@ -237,9 +226,6 @@ export const getGetCallStatsUrl = (params?: GetCallStatsParams,) => {
   return stringifiedParams.length > 0 ? `/api/calls/stats?${stringifiedParams}` : `/api/calls/stats`
 }
 
-/**
- * @summary Get dashboard statistics
- */
 export const getCallStats = async (params?: GetCallStatsParams, options?: RequestInit): Promise<CallStats> => {
 
   return customFetch<CallStats>(getGetCallStatsUrl(params),
@@ -284,9 +270,6 @@ export type GetCallStatsQueryResult = NonNullable<Awaited<ReturnType<typeof getC
 export type GetCallStatsQueryError = ErrorType<ErrorResponse>
 
 
-/**
- * @summary Get dashboard statistics
- */
 
 export function useGetCallStats<TData = Awaited<ReturnType<typeof getCallStats>>, TError = ErrorType<ErrorResponse>>(
  params?: GetCallStatsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCallStats>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
@@ -314,9 +297,6 @@ export const getGetCallUrl = (id: string,) => {
   return `/api/calls/${id}`
 }
 
-/**
- * @summary Get a single call detail
- */
 export const getCall = async (id: string, options?: RequestInit): Promise<CallDetail> => {
 
   return customFetch<CallDetail>(getGetCallUrl(id),
@@ -361,9 +341,6 @@ export type GetCallQueryResult = NonNullable<Awaited<ReturnType<typeof getCall>>
 export type GetCallQueryError = ErrorType<ErrorResponse>
 
 
-/**
- * @summary Get a single call detail
- */
 
 export function useGetCall<TData = Awaited<ReturnType<typeof getCall>>, TError = ErrorType<ErrorResponse>>(
  id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCall>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
@@ -391,9 +368,6 @@ export const getListAdminClientsUrl = () => {
   return `/api/admin/clients`
 }
 
-/**
- * @summary List all clients (admin only)
- */
 export const listAdminClients = async ( options?: RequestInit): Promise<ClientRecord[]> => {
 
   return customFetch<ClientRecord[]>(getListAdminClientsUrl(),
@@ -438,9 +412,6 @@ export type ListAdminClientsQueryResult = NonNullable<Awaited<ReturnType<typeof 
 export type ListAdminClientsQueryError = ErrorType<ErrorResponse>
 
 
-/**
- * @summary List all clients (admin only)
- */
 
 export function useListAdminClients<TData = Awaited<ReturnType<typeof listAdminClients>>, TError = ErrorType<ErrorResponse>>(
   options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminClients>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
@@ -468,9 +439,6 @@ export const getCreateAdminClientUrl = () => {
   return `/api/admin/clients`
 }
 
-/**
- * @summary Create a new client (admin only)
- */
 export const createAdminClient = async (clientInput: ClientInput, options?: RequestInit): Promise<ClientRecord> => {
 
   return customFetch<ClientRecord>(getCreateAdminClientUrl(),
@@ -517,10 +485,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type CreateAdminClientMutationBody = BodyType<ClientInput>
     export type CreateAdminClientMutationError = ErrorType<ErrorResponse>
 
-    /**
- * @summary Create a new client (admin only)
- */
-export const useCreateAdminClient = <TError = ErrorType<ErrorResponse>,
+    export const useCreateAdminClient = <TError = ErrorType<ErrorResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAdminClient>>, TError,{data: BodyType<ClientInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof createAdminClient>>,
@@ -539,9 +504,6 @@ export const getUpdateAdminClientUrl = (id: number,) => {
   return `/api/admin/clients/${id}`
 }
 
-/**
- * @summary Update a client (admin only)
- */
 export const updateAdminClient = async (id: number,
     clientUpdate: ClientUpdate, options?: RequestInit): Promise<ClientRecord> => {
 
@@ -589,10 +551,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type UpdateAdminClientMutationBody = BodyType<ClientUpdate>
     export type UpdateAdminClientMutationError = ErrorType<ErrorResponse>
 
-    /**
- * @summary Update a client (admin only)
- */
-export const useUpdateAdminClient = <TError = ErrorType<ErrorResponse>,
+    export const useUpdateAdminClient = <TError = ErrorType<ErrorResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAdminClient>>, TError,{id: number;data: BodyType<ClientUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof updateAdminClient>>,
@@ -611,9 +570,6 @@ export const getDeleteAdminClientUrl = (id: number,) => {
   return `/api/admin/clients/${id}`
 }
 
-/**
- * @summary Delete a client (admin only)
- */
 export const deleteAdminClient = async (id: number, options?: RequestInit): Promise<void> => {
 
   return customFetch<void>(getDeleteAdminClientUrl(id),
@@ -660,10 +616,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type DeleteAdminClientMutationError = ErrorType<ErrorResponse>
 
-    /**
- * @summary Delete a client (admin only)
- */
-export const useDeleteAdminClient = <TError = ErrorType<ErrorResponse>,
+    export const useDeleteAdminClient = <TError = ErrorType<ErrorResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAdminClient>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof deleteAdminClient>>,
@@ -682,9 +635,6 @@ export const getGetMyClientUrl = () => {
   return `/api/clients/me`
 }
 
-/**
- * @summary Get current logged-in client record
- */
 export const getMyClient = async ( options?: RequestInit): Promise<ClientRecord> => {
 
   return customFetch<ClientRecord>(getGetMyClientUrl(),
@@ -729,9 +679,6 @@ export type GetMyClientQueryResult = NonNullable<Awaited<ReturnType<typeof getMy
 export type GetMyClientQueryError = ErrorType<ErrorResponse>
 
 
-/**
- * @summary Get current logged-in client record
- */
 
 export function useGetMyClient<TData = Awaited<ReturnType<typeof getMyClient>>, TError = ErrorType<ErrorResponse>>(
   options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyClient>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
@@ -739,6 +686,77 @@ export function useGetMyClient<TData = Awaited<ReturnType<typeof getMyClient>>, 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetMyClientQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListMyLeadsUrl = () => {
+
+
+
+
+  return `/api/clients/me/leads`
+}
+
+export const listMyLeads = async ( options?: RequestInit): Promise<LeadRecord[]> => {
+
+  return customFetch<LeadRecord[]>(getListMyLeadsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListMyLeadsQueryKey = () => {
+    return [
+    `/api/clients/me/leads`
+    ] as const;
+    }
+
+
+export const getListMyLeadsQueryOptions = <TData = Awaited<ReturnType<typeof listMyLeads>>, TError = ErrorType<ErrorResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMyLeads>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListMyLeadsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listMyLeads>>> = ({ signal }) => listMyLeads({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listMyLeads>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListMyLeadsQueryResult = NonNullable<Awaited<ReturnType<typeof listMyLeads>>>
+export type ListMyLeadsQueryError = ErrorType<ErrorResponse>
+
+
+
+export function useListMyLeads<TData = Awaited<ReturnType<typeof listMyLeads>>, TError = ErrorType<ErrorResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMyLeads>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListMyLeadsQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -759,9 +777,6 @@ export const getOnboardClientUrl = () => {
   return `/api/clients/onboard`
 }
 
-/**
- * @summary Link a clientCode to the logged-in user
- */
 export const onboardClient = async (onboardInput: OnboardInput, options?: RequestInit): Promise<ClientRecord> => {
 
   return customFetch<ClientRecord>(getOnboardClientUrl(),
@@ -808,10 +823,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type OnboardClientMutationBody = BodyType<OnboardInput>
     export type OnboardClientMutationError = ErrorType<ErrorResponse>
 
-    /**
- * @summary Link a clientCode to the logged-in user
- */
-export const useOnboardClient = <TError = ErrorType<ErrorResponse>,
+    export const useOnboardClient = <TError = ErrorType<ErrorResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof onboardClient>>, TError,{data: BodyType<OnboardInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof onboardClient>>,
@@ -830,9 +842,6 @@ export const getGetAuthMeUrl = () => {
   return `/api/auth/me`
 }
 
-/**
- * @summary Get current user role (admin or client)
- */
 export const getAuthMe = async ( options?: RequestInit): Promise<AuthMeResponse> => {
 
   return customFetch<AuthMeResponse>(getGetAuthMeUrl(),
@@ -877,9 +886,6 @@ export type GetAuthMeQueryResult = NonNullable<Awaited<ReturnType<typeof getAuth
 export type GetAuthMeQueryError = ErrorType<ErrorResponse>
 
 
-/**
- * @summary Get current user role (admin or client)
- */
 
 export function useGetAuthMe<TData = Awaited<ReturnType<typeof getAuthMe>>, TError = ErrorType<ErrorResponse>>(
   options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAuthMe>>, TError, TData>, request?: SecondParameter<typeof customFetch>}

@@ -17,6 +17,7 @@ import CallDetail from "@/pages/CallDetail";
 import Onboard from "@/pages/Onboard";
 import Admin from "@/pages/Admin";
 import AdminClientForm from "@/pages/AdminClientForm";
+import MyLeads from "@/pages/MyLeads";
 import NotFound from "@/pages/not-found";
 
 const clerkPubKey = publishableKeyFromHost(
@@ -168,6 +169,7 @@ function AuthRouter() {
                      <Route path="/dashboard" component={Dashboard} />
                      <Route path="/calls" component={Calls} />
                      <Route path="/calls/:id" component={CallDetail} />
+                     <Route path="/leads" component={MyLeads} />
                      <Route component={NotFound} />
                    </Switch>
                  </AppLayout>

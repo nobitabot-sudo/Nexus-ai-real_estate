@@ -8,9 +8,17 @@
 
 export interface ClientUpdate {
   /** @nullable */
+  clientCode?: string | null;
+  /** @nullable */
   name?: string | null;
   /** @nullable */
   assistantId?: string | null;
   /** @nullable */
   niche?: string | null;
+  /** @nullable */
+  planType?: string | null;
+  /** @nullable */
+  phoneNumberId?: string | null;
+  /** @nullable */
+  callLimit?: number | null;
 }

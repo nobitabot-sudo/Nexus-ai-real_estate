@@ -136,6 +136,11 @@ export interface ClientRecord {
   assistantId: string;
   /** @nullable */
   niche?: string | null;
+  planType: string;
+  /** @nullable */
+  phoneNumberId?: string | null;
+  /** @nullable */
+  callLimit?: number | null;
   /** @nullable */
   clerkUserId?: string | null;
   isLinked: boolean;
@@ -148,15 +153,28 @@ export interface ClientInput {
   assistantId: string;
   /** @nullable */
   niche?: string | null;
+  planType: string;
+  /** @nullable */
+  phoneNumberId?: string | null;
+  /** @nullable */
+  callLimit?: number | null;
 }
 
 export interface ClientUpdate {
+  /** @nullable */
+  clientCode?: string | null;
   /** @nullable */
   name?: string | null;
   /** @nullable */
   assistantId?: string | null;
   /** @nullable */
   niche?: string | null;
+  /** @nullable */
+  planType?: string | null;
+  /** @nullable */
+  phoneNumberId?: string | null;
+  /** @nullable */
+  callLimit?: number | null;
 }
 
 export interface OnboardInput {
@@ -169,6 +187,37 @@ export interface AuthMeResponse {
   /** @nullable */
   email?: string | null;
   isFirstUser: boolean;
+}
+
+export interface LeadRecord {
+  id: number;
+  clientId: number;
+  firstName: string;
+  /** @nullable */
+  lastName?: string | null;
+  phone: string;
+  /** @nullable */
+  email?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  status: string;
+  /** @nullable */
+  vapiCallId?: string | null;
+  /** @nullable */
+  callSummary?: string | null;
+  /** @nullable */
+  callSentiment?: string | null;
+  /** @nullable */
+  callDurationSeconds?: number | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UploadLeadsResponse {
+  inserted: number;
+  queued: number;
+  errors: number;
+  message: string;
 }
 
 export type ListCallsParams = {

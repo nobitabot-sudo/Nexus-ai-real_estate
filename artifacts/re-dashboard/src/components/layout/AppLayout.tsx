@@ -8,9 +8,11 @@ import {
   LogOut,
   Building2,
   Menu,
+  Contact,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { useGetMyClient } from "@workspace/api-client-react";
 
 export function AppLayout({
   children,
@@ -22,6 +24,7 @@ export function AppLayout({
   const [location] = useLocation();
   const { signOut } = useClerk();
   const { user } = useUser();
+  const { data: myClient } = useGetMyClient({ query: { enabled: role === "client" } });
 
   const adminNav = [
     { name: "Clients", href: "/admin", icon: Users },
@@ -29,8 +32,13 @@ export function AppLayout({
 
   const clientNav = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Calls", href: "/calls", icon: Phone },
   ];
+  
+  if (myClient && (myClient.planType === "outbound" || myClient.planType === "combo")) {
+    clientNav.push({ name: "My Leads", href: "/leads", icon: Users });
+  }
+
+  clientNav.push({ name: "Calls", href: "/calls", icon: Phone });
 
   const navItems = role === "admin" ? adminNav : clientNav;
 
@@ -62,7 +70,7 @@ export function AppLayout({
       <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b bg-card px-4 md:hidden">
         <div className="flex items-center gap-2 font-bold text-primary text-lg">
           <Building2 className="h-5 w-5" />
-          <span>NexusAI</span>
+          <span>LeadCommand</span>
         </div>
         <Sheet>
           <SheetTrigger asChild>
@@ -74,7 +82,7 @@ export function AppLayout({
           <SheetContent side="left" className="w-64 bg-sidebar p-0 text-sidebar-foreground border-r-sidebar-border">
             <div className="flex h-14 items-center gap-2 border-b border-sidebar-border px-6 font-bold text-sidebar-primary text-lg">
               <Building2 className="h-6 w-6" />
-              <span>NexusAI</span>
+              <span>LeadCommand</span>
             </div>
             <nav className="flex-1 space-y-1 p-4">
               <NavLinks />
@@ -106,7 +114,7 @@ export function AppLayout({
       <aside className="hidden w-64 flex-col border-r border-sidebar-border bg-sidebar md:flex">
         <div className="flex h-16 items-center gap-2 border-b border-sidebar-border px-6 font-bold text-sidebar-primary text-xl">
           <Building2 className="h-6 w-6" />
-          <span>NexusAI</span>
+          <span>LeadCommand</span>
         </div>
         
         <nav className="flex-1 space-y-1 p-4">

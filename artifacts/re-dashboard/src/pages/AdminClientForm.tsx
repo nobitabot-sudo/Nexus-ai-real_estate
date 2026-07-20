@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -41,6 +42,9 @@ export default function AdminClientForm() {
     clientCode: "",
     assistantId: "",
     niche: "",
+    planType: "inbound",
+    phoneNumberId: "",
+    callLimit: "",
   });
 
   const initializedForId = useRef<number | null>(null);
@@ -53,6 +57,9 @@ export default function AdminClientForm() {
         clientCode: clientToEdit.clientCode || "",
         assistantId: clientToEdit.assistantId || "",
         niche: clientToEdit.niche || "",
+        planType: clientToEdit.planType || "inbound",
+        phoneNumberId: clientToEdit.phoneNumberId || "",
+        callLimit: clientToEdit.callLimit?.toString() || "",
       });
     }
   }, [isNew, clientToEdit, clientId]);
@@ -109,6 +116,9 @@ export default function AdminClientForm() {
           clientCode: formData.clientCode,
           assistantId: formData.assistantId,
           niche: formData.niche || undefined,
+          planType: formData.planType as "inbound" | "outbound" | "combo",
+          phoneNumberId: formData.phoneNumberId || undefined,
+          callLimit: formData.callLimit ? parseInt(formData.callLimit, 10) : undefined,
         }
       });
     } else if (clientId) {
@@ -116,8 +126,12 @@ export default function AdminClientForm() {
         id: clientId,
         data: {
           name: formData.name,
+          clientCode: formData.clientCode,
           assistantId: formData.assistantId,
           niche: formData.niche || undefined,
+          planType: formData.planType as "inbound" | "outbound" | "combo",
+          phoneNumberId: formData.phoneNumberId || undefined,
+          callLimit: formData.callLimit ? parseInt(formData.callLimit, 10) : null,
         }
       });
     }
@@ -175,7 +189,6 @@ export default function AdminClientForm() {
                   onChange={(e) => setFormData(prev => ({ ...prev, clientCode: e.target.value.toUpperCase() }))}
                   placeholder="ACME-1234"
                   className="font-mono uppercase"
-                  disabled={!isNew}
                   required
                 />
               </div>
@@ -202,6 +215,74 @@ export default function AdminClientForm() {
                 />
               </div>
             </div>
+
+            <div className="space-y-4 pt-4 border-t">
+              <Label>Plan Type</Label>
+              <RadioGroup 
+                value={formData.planType} 
+                onValueChange={(val) => setFormData(prev => ({ ...prev, planType: val }))}
+                className="grid grid-cols-1 gap-4 md:grid-cols-3"
+              >
+                <div>
+                  <RadioGroupItem value="inbound" id="inbound" className="peer sr-only" />
+                  <Label
+                    htmlFor="inbound"
+                    className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-transparent p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 cursor-pointer"
+                  >
+                    <span className="font-semibold mb-1 text-base">Inbound</span>
+                    <span className="text-xs text-muted-foreground text-center font-normal">Clients call in, AI answers and qualifies</span>
+                  </Label>
+                </div>
+                <div>
+                  <RadioGroupItem value="outbound" id="outbound" className="peer sr-only" />
+                  <Label
+                    htmlFor="outbound"
+                    className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-transparent p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 cursor-pointer"
+                  >
+                    <span className="font-semibold mb-1 text-base">Outbound</span>
+                    <span className="text-xs text-muted-foreground text-center font-normal">AI calls your uploaded leads automatically</span>
+                  </Label>
+                </div>
+                <div>
+                  <RadioGroupItem value="combo" id="combo" className="peer sr-only" />
+                  <Label
+                    htmlFor="combo"
+                    className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-transparent p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 cursor-pointer"
+                  >
+                    <span className="font-semibold mb-1 text-base">Combo</span>
+                    <span className="text-xs text-muted-foreground text-center font-normal">Both inbound answering + outbound lead calling</span>
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
+
+            {(formData.planType === "outbound" || formData.planType === "combo") && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t">
+                <div className="space-y-2">
+                  <Label htmlFor="phoneNumberId">VAPI Phone Number ID</Label>
+                  <Input 
+                    id="phoneNumberId" 
+                    value={formData.phoneNumberId} 
+                    onChange={(e) => setFormData(prev => ({ ...prev, phoneNumberId: e.target.value }))}
+                    placeholder="123e4567-e89b..."
+                    className="font-mono"
+                  />
+                  <p className="text-xs text-muted-foreground">Your VAPI phone number ID for placing outbound calls</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="callLimit">Monthly Call Limit (Optional)</Label>
+                  <Input 
+                    id="callLimit" 
+                    type="number"
+                    min="1"
+                    value={formData.callLimit} 
+                    onChange={(e) => setFormData(prev => ({ ...prev, callLimit: e.target.value }))}
+                    placeholder="Unlimited"
+                  />
+                  <p className="text-xs text-muted-foreground">Maximum successful calls allowed per month</p>
+                </div>
+              </div>
+            )}
           </CardContent>
           <CardFooter className="flex justify-end gap-3 border-t bg-muted/20 px-6 py-4">
             <Link href="/admin">
