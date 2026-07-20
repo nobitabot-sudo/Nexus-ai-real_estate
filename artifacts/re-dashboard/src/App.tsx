@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { ClerkProvider, SignIn, SignUp, Show, useClerk, useUser } from "@clerk/react";
+import { ClerkProvider, SignIn, SignUp, Show, useClerk, useUser, useAuth } from "@clerk/react";
 import { publishableKeyFromHost } from "@clerk/react/internal";
 import { shadcn } from "@clerk/themes";
 import { Switch, Route, useLocation, Router as WouterRouter, Redirect } from "wouter";
@@ -7,7 +7,7 @@ import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/reac
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
-import { useGetAuthMe } from "@workspace/api-client-react";
+import { useGetAuthMe, setAuthTokenGetter } from "@workspace/api-client-react";
 
 import { AppLayout } from "@/components/layout/AppLayout";
 import Home from "@/pages/Home";
@@ -98,6 +98,18 @@ function SignUpPage() {
       <SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} />
     </div>
   );
+}
+
+// When the frontend is on a different domain from the API (Vercel + Render),
+// cookies won't travel cross-origin. This component wires Clerk's getToken()
+// into the API client so every request carries a Bearer token instead.
+function ClerkAuthSetup() {
+  const { getToken } = useAuth();
+  useEffect(() => {
+    setAuthTokenGetter(() => getToken());
+    return () => setAuthTokenGetter(null);
+  }, [getToken]);
+  return null;
 }
 
 function ClerkQueryClientCacheInvalidator() {
@@ -201,6 +213,7 @@ function ClerkProviderWithRoutes() {
     >
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
+          <ClerkAuthSetup />
           <ClerkQueryClientCacheInvalidator />
           <AuthRouter />
           <Toaster />
