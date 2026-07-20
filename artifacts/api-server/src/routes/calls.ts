@@ -7,12 +7,13 @@ import { ListCallsQueryParams, GetCallStatsQueryParams, GetCallParams } from "@w
 
 const callsRouter = Router();
 
-async function getUserContext(clerkUserId: string): Promise<{ role: string; assistantId?: string }> {
+// CHANGE 1: added `onboarded` flag
+async function getUserContext(clerkUserId: string): Promise<{ role: string; assistantId?: string; onboarded: boolean }> {
   const [user] = await db.select().from(usersTable).where(eq(usersTable.clerkUserId, clerkUserId));
-  if (!user) return { role: "client" };
-  if (user.role === "admin") return { role: "admin" };
+  if (!user) return { role: "client", onboarded: false };
+  if (user.role === "admin") return { role: "admin", onboarded: true };
   const [client] = await db.select().from(clientsTable).where(eq(clientsTable.clerkUserId, clerkUserId));
-  return { role: "client", assistantId: client?.assistantId };
+  return { role: "client", assistantId: client?.assistantId, onboarded: !!client };
 }
 
 // GET /api/calls/stats — must be before /:id
@@ -21,7 +22,14 @@ callsRouter.get("/calls/stats", async (req, res): Promise<void> => {
   if (!auth?.userId) { res.status(401).json({ error: "Unauthorized" }); return; }
 
   const qParsed = GetCallStatsQueryParams.safeParse(req.query);
-  const { role, assistantId: clientAssistantId } = await getUserContext(auth.userId);
+  const { role, assistantId: clientAssistantId, onboarded } = await getUserContext(auth.userId);
+
+  // CHANGE 3: block unlinked clients
+  if (role === "client" && !onboarded) {
+    res.status(403).json({ error: "Account not linked to a client. Please enter your client code." });
+    return;
+  }
+
   const forcedAssistantId = role === "admin" ? (qParsed.success ? qParsed.data.assistantId ?? undefined : undefined) : clientAssistantId;
 
   try {
@@ -41,7 +49,14 @@ callsRouter.get("/calls", async (req, res): Promise<void> => {
   const parsed = ListCallsQueryParams.safeParse(req.query);
   if (!parsed.success) { res.status(400).json({ error: "Invalid query parameters" }); return; }
 
-  const { role, assistantId: clientAssistantId } = await getUserContext(auth.userId);
+  const { role, assistantId: clientAssistantId, onboarded } = await getUserContext(auth.userId);
+
+  // CHANGE 2: block unlinked clients
+  if (role === "client" && !onboarded) {
+    res.status(403).json({ error: "Account not linked to a client. Please enter your client code." });
+    return;
+  }
+
   const assistantId = role === "admin"
     ? (parsed.data.assistantId ?? undefined)
     : clientAssistantId;
@@ -70,7 +85,6 @@ callsRouter.get("/calls/:id", async (req, res): Promise<void> => {
 
   try {
     const call = await getVapiCall(params.data.id);
-    // Clients can only see their own assistant's calls
     const { role, assistantId: clientAssistantId } = await getUserContext(auth.userId);
     if (role !== "admin" && call.assistantId && clientAssistantId && call.assistantId !== clientAssistantId) {
       res.status(403).json({ error: "Access denied" });
