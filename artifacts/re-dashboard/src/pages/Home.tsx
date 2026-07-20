@@ -18,7 +18,7 @@ export default function Home() {
           <header className="flex h-20 items-center justify-between px-6 md:px-12 border-b bg-card">
             <div className="flex items-center gap-2 text-primary font-bold text-2xl">
               <Building2 className="h-8 w-8 text-sidebar-primary" />
-              <span>LeadCommand</span>
+              <span>Nexus AI</span>
             </div>
             <div className="flex items-center gap-4">
               <Link href="/sign-in" className="text-sm font-medium hover:text-primary transition-colors">
@@ -85,7 +85,7 @@ export default function Home() {
           </section>
 
           <footer className="py-8 text-center text-sm text-muted-foreground border-t">
-            © {new Date().getFullYear()} LeadCommand. All rights reserved.
+            © {new Date().getFullYear()} Nexus AI. All rights reserved.
           </footer>
         </div>
       </Show>

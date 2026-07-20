@@ -70,7 +70,7 @@ export function AppLayout({
       <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b bg-card px-4 md:hidden">
         <div className="flex items-center gap-2 font-bold text-primary text-lg">
           <Building2 className="h-5 w-5" />
-          <span>LeadCommand</span>
+          <span>Nexus AI</span>
         </div>
         <Sheet>
           <SheetTrigger asChild>
@@ -82,7 +82,7 @@ export function AppLayout({
           <SheetContent side="left" className="w-64 bg-sidebar p-0 text-sidebar-foreground border-r-sidebar-border">
             <div className="flex h-14 items-center gap-2 border-b border-sidebar-border px-6 font-bold text-sidebar-primary text-lg">
               <Building2 className="h-6 w-6" />
-              <span>LeadCommand</span>
+              <span>Nexus AI</span>
             </div>
             <nav className="flex-1 space-y-1 p-4">
               <NavLinks />
@@ -114,7 +114,7 @@ export function AppLayout({
       <aside className="hidden w-64 flex-col border-r border-sidebar-border bg-sidebar md:flex">
         <div className="flex h-16 items-center gap-2 border-b border-sidebar-border px-6 font-bold text-sidebar-primary text-xl">
           <Building2 className="h-6 w-6" />
-          <span>LeadCommand</span>
+          <span>Nexus AI</span>
         </div>
         
         <nav className="flex-1 space-y-1 p-4">

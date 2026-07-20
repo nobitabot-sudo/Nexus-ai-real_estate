@@ -52,7 +52,7 @@ export default function Onboard() {
       <header className="flex h-20 items-center px-6 md:px-12 border-b bg-card">
         <div className="flex items-center gap-2 text-primary font-bold text-2xl">
           <Building2 className="h-8 w-8 text-sidebar-primary" />
-          <span>LeadCommand</span>
+          <span>Nexus AI</span>
         </div>
       </header>
 
